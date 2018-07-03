@@ -1,0 +1,20 @@
+{
+    "name": "story-site_back-end",
+    "author": "Mans Isaksson",
+    "version": "1.0.0",
+    "main": "./dist/main.js",
+    "types": "./dist/main.d.ts",
+    "dependencies": {
+        "@types/mongoose": "^5.0.2",
+        "mongodb": "^3.0.2",
+        "mongoose": "^5.0.6"
+    },
+    "devDependencies": {
+        "@types/mongodb": "^3.0.5"
+    },
+    "scripts": {
+        "start": "npm run build && npm run serve",
+        "build": "tsc",
+        "serve": "node dist/main.js"
+  }
+}

@@ -1,0 +1,11 @@
+[ ] Setup two mongoDB repos on my server, one for development and one for production
+
+[ ] Create node application that interfaces with this database
+
+[ ] User/Authentication requests
+	[ ] Look into express and sessions
+
+[ ] Story requests
+
+[ ] Look into production environment on the server
+	
