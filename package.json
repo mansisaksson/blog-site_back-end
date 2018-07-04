@@ -1,5 +1,11 @@
 {
     "name": "story-site_back-end",
+    "description": "Backen for story site",
+    "license": "UNLICENSED",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mansisaksson/story-site_back-end.git"
+    },
     "author": "Mans Isaksson",
     "version": "1.0.0",
     "main": "./dist/main.js",
@@ -16,5 +22,5 @@
         "start": "npm run build && npm run serve",
         "build": "tsc",
         "serve": "node dist/main.js"
-  }
+    }
 }
