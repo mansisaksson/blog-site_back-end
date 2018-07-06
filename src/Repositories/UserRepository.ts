@@ -23,23 +23,23 @@ let schema = new Schema({
 	}
 }).pre('save', function (next) {
 	if (this._doc) {
-		let doc = <IUserModel>this._doc;
-		let now = new Date();
+		let doc = <IUserModel>this._doc
+		let now = new Date()
 		if (!doc.createdAt) {
-			doc.createdAt = now;
+			doc.createdAt = now
 		}
-		doc.modifiedAt = now;
+		doc.modifiedAt = now
 	}
-	next();
-	return this;
-});
+	next()
+	return this
+})
 
 export let UserSchema = mongoose.model<IUserModel>('user', schema, 'users', true);
 
 export class UserRepository extends RepositoryBase<IUserModel>
 {
 	constructor() {
-		super(UserSchema);
+		super(UserSchema)
 	}
 
 	createNewUser(name: string, password: string): Promise<IUserModel> {
@@ -57,30 +57,18 @@ export class UserRepository extends RepositoryBase<IUserModel>
 
 	findUser(name: string): Promise<IUserModel> {
 		return new Promise<IUserModel>((resolve, reject) => {
-			this.find({ name: name }).sort({ createdAt: -1 }).limit(1).exec((err, res) => {
-				if (err) {
-					reject(err)
-				} else {
-					resolve(res.length > 0 ? <IUserModel>res[0] : undefined)
-				}
-			})
+			this.find({ name: name }, 1).then(users => {
+				resolve(users.length > 0 ? <IUserModel>users[0] : undefined)
+			}).catch(e => reject(e))
 		})
 	}
 
 	findUsers(name: string, limit: number): Promise<IUserModel[]> {
 		return new Promise<IUserModel[]>((resolve, reject) => {
-			this.find({ name: name }).sort({ createdAt: -1 }).limit(limit).exec((err, res) => {
-				if (err) {
-					reject(err)
-				} else {
-					let outUsers: IUserModel[] = [] // TODO: is pre-allocating an array a thing in js?
-					res.forEach(result => {
-						outUsers.push(<IUserModel>result)
-					})
-					resolve(outUsers)
-				}
-			})
+			this.find({ name: name }, limit).then(users => {
+				resolve(users)
+			}).catch(e => reject(e))
 		})
 	}
 }
-Object.seal(UserRepository);
+Object.seal(UserRepository)

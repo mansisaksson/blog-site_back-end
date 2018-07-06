@@ -4,7 +4,7 @@ export interface IRead<T> {
 	retrieve(): Promise<T>
 	findById(id: string): Promise<T>
 	findOne(cond?: Object): Promise<T>
-	find(cond: Object, fields: Object, options: Object): Promise<T[]>
+	find(cond: Object, limit: number, sort?: Object): Promise<T[]>
 }
 
 export interface IWrite<T> {
@@ -78,13 +78,13 @@ export class RepositoryBase<T extends mongoose.Document> implements IRead<T>, IW
 		})
 	}
 
-	find(cond?: Object, fields?: Object, options?: Object): Promise<T[]> {
+	find(cond: Object, limit: number, sort?: Object): Promise<T[]> {
 		return new Promise<T[]>((resolve, reject) => {
 			let callback = (err: any, res: T[]) => {
 				if (err) { reject(err) }
 				else { resolve(res) }
 			}
-			this._model.find(cond, options, callback)
+			this._model.find(cond).sort(sort).limit(limit).exec(callback)
 		})
 	}
 
