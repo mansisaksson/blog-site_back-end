@@ -7,23 +7,35 @@ export interface IUserModel extends mongoose.Document {
 	modifiedAt: Date
 }
 
-export class UserFunctions {
+export interface IPublicUser {
+	id: string
+	name: string
+	createdAt: Date
+}
 
-	private constructor() {
-	}
+export namespace UserFunctions {
 
-	static setName(userModel: IUserModel, name: string) {
+	export function setName(userModel: IUserModel, name: string) {
 		// TODO: validate username (check for duplicates etc...)
 		userModel.name = name
 	}
 
-	static setPassword(userModel: IUserModel, password: string) {
+	export function setPassword(userModel: IUserModel, password: string) {
 		// TODO: Hash password
 		userModel.password = password
 	}
 
-	static validatePassword(userModel: IUserModel, password: string): boolean {
+	export function validatePassword(userModel: IUserModel, password: string): boolean {
 		return false
+	}
+
+	export function toPublicUser(userModel: IUserModel): IPublicUser {
+		let newPublicUser = <IPublicUser>{
+			id: userModel.id,
+			name: userModel.name,
+			createdAt: userModel.createdAt
+		}
+		return newPublicUser
 	}
 	
 }
