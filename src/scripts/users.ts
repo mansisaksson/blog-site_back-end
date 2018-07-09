@@ -5,8 +5,23 @@ import { UserFunctions } from '../models';
 module.exports = function (app: Express) {
 	let userRepo = new UserRepository()
 
-	app.post('/api/authenticate', function (req: Request, res: Response, next: NextFunction) {
+	app.get('/api/authenticate', function (req: Request, res: Response, next: NextFunction) {
+		let userName = req.params['user_name']
+		let userPassword = req.params['user_password']
+		userRepo.findUser(userName).then((user) => {
+			if (UserFunctions.validatePassword(user, userPassword)) {
+				res.send(user)
+				res.end()
+			} else {
+				res.statusCode = 400
+				res.send("Invaid Password")
+				res.end()
+			}
 
+		}).catch(error => {
+			res.statusCode = 500
+			res.end("Could not find user")
+		})
 	})
 
 	app.post('/api/users/query', function (req: Request, res: Response, next: NextFunction) {

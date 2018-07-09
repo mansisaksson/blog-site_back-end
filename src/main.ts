@@ -7,6 +7,7 @@ let uri = 'mongodb://localhost/users'
 mongoose.connect(uri).then((Mongoose) => {
 	console.log("Connected to database!")
 
+	// Enable sessions
 	app.set('trust proxy', 1) // trust first proxy
 	app.use(session({
 		secret: 'rFeshvHyphDvunfzKQubevCWRHBA4r3XXzJFA677EwZfkSTfPUB9D3eAb6cr2VDTcfVDERzHQagchwxYtnZ6n5NnDQP77HRjebMS',
@@ -14,13 +15,26 @@ mongoose.connect(uri).then((Mongoose) => {
 		saveUninitialized: true,
 		cookie: { secure: true }
 	}))
-	
+
+	// Log requests
+	app.use(function (req, res, next) {
+		console.log('Request for: ' + req.url)
+		next()
+	})
+
+	// Allow cross-origin requests
+	app.use(function (req, res, next) {
+		res.header("Access-Control-Allow-Origin", "*")
+		res.header("Access-Control-Allow-Headers", "X-Requested-With")
+		next()
+	})
+
 	// Listen for user requests
 	require('./scripts/users')(app)
-	
+
 	app.listen(3000, function () {
 		console.log("Server started!")
-	}).on("close", function() {
+	}).on("close", function () {
 		console.log("Server Closed!")
 		mongoose.disconnect()
 	})
