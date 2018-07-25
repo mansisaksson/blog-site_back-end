@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import { RepositoryBase } from './RepositoryBase'
-import { IUserModel } from './../models/User'
+import { IUserModel } from '../models/User'
 
 export let Schema = mongoose.Schema;
 

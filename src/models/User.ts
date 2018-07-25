@@ -26,7 +26,7 @@ export namespace UserFunctions {
 	}
 
 	export function validatePassword(userModel: IUserModel, password: string): boolean {
-		return false
+		return userModel.password === password
 	}
 
 	export function toPublicUser(userModel: IUserModel): IPublicUser {

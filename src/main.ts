@@ -3,7 +3,7 @@ import * as express from "express"
 import * as session from 'express-session'
 var app = express()
 
-let uri = 'mongodb://localhost/users'
+let uri = 'mongodb://localhost/story_site'
 mongoose.connect(uri).then((Mongoose) => {
 	console.log("Connected to database!")
 
@@ -18,14 +18,15 @@ mongoose.connect(uri).then((Mongoose) => {
 
 	// Log requests
 	app.use(function (req, res, next) {
-		console.log('Request for: ' + req.url)
+		console.log(req.method + ":" + req.url)
 		next()
 	})
 
 	// Allow cross-origin requests
 	app.use(function (req, res, next) {
 		res.header("Access-Control-Allow-Origin", "*")
-		res.header("Access-Control-Allow-Headers", "X-Requested-With")
+		res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+		res.header("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 		next()
 	})
 
