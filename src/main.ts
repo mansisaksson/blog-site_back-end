@@ -33,6 +33,9 @@ mongoose.connect(uri).then((Mongoose) => {
 	// Listen for user requests
 	require('./scripts/users')(app)
 
+	// Listen for story requests
+	require('./scripts/stories')(app)
+
 	app.listen(3000, function () {
 		console.log("Server started!")
 	}).on("close", function () {

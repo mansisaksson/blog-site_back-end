@@ -2,9 +2,7 @@ import * as mongoose from 'mongoose'
 import { RepositoryBase } from './RepositoryBase'
 import { IUserModel } from '../models/User'
 
-export let Schema = mongoose.Schema;
-
-let schema = new Schema({
+let schema = new mongoose.Schema({
 	name: {
 		type: String,
 		required: true
@@ -34,7 +32,7 @@ let schema = new Schema({
 	return this
 })
 
-export let UserSchema = mongoose.model<IUserModel>('user', schema, 'users', true);
+let UserSchema = mongoose.model<IUserModel>('user', schema, 'users', true);
 
 export class UserRepository extends RepositoryBase<IUserModel>
 {
