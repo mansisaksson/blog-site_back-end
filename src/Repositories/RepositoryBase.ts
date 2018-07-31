@@ -58,6 +58,19 @@ export class RepositoryBase<T extends mongoose.Document> implements IRead<T>, IW
 		})
 	}
 
+	deleteAll(_ids: string[]): Promise<any> {
+		return new Promise<any>((resolve, reject) => {
+			let callback = (error: any, result: any) => {
+				if (error) { reject(error) }
+				else { resolve(result) }
+			}
+
+			let objectIds = []
+			_ids.forEach(id => objectIds.push(this.toObjectId(id)))
+			this._model.remove({ _id: { $in: objectIds } }, (err) => callback(err, null));
+		})
+	}
+
 	findById(_id: string): Promise<T> {
 		return new Promise<T>((resolve, reject) => {
 			let callback = (error: any, result: T) => {

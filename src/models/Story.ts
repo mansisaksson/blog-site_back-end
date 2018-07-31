@@ -10,7 +10,7 @@ export interface IStoryModel extends mongoose.Document {
 	createdAt: Date
 	modifiedAt: Date
 	revision: number
-	chapterURIs: string[]
+	chapterIds: string[]
 }
 
 export interface IPublicStory {
@@ -37,8 +37,10 @@ export interface IPublicStoryChapter {
 
 export namespace StoryFunctions {
 
-	export function setTitle(userModel: IStoryModel, name: string) {
-		// TODO
+	export function toPublicStory(userModel: IStoryModel): IPublicStory {
+		return <IPublicStory>{
+			//TODO
+		}
 	}
 	
 }

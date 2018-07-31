@@ -8,7 +8,7 @@ interface RequestResponse {
 }
 
 export namespace Protocol {
-    export function success(expressResponse: Response, body: any) {
+    export function success(expressResponse: Response, body?: any) {
         let response = <RequestResponse>{
             success: true,
             body: body

@@ -51,5 +51,11 @@ export class StoryChapterRepository extends RepositoryBase<IStoryChapterModel>
 			}).catch(e => reject(e))
 		})
 	}
+
+	findChapters(Ids: string[]): Promise<IStoryChapterModel[]> {
+		return new Promise<IStoryChapterModel[]>((resolve, reject) => {
+			// TODO
+		})
+	}
 }
 Object.seal(StoryChapterRepository)

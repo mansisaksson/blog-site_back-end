@@ -9,7 +9,7 @@ let schema = new mongoose.Schema({
 	downvotes: Number,
 	thumbnailURI: String,
 	revision: Number,
-	chapterURIs: [String],
+	chapterIds: [String],
 	
 	createdAt: {
 		type: Date,
@@ -50,7 +50,7 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 				downvotes: 0,
 				thumbnailURI: "",
 				revision: 0,
-				chapterURIs: []
+				chapterIds: []
 			}
 
 			this.create(story).then((user: IStoryModel) => {
