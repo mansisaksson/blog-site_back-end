@@ -30,7 +30,7 @@ let schema = new mongoose.Schema({
 	return this
 })
 
-let StoryChapterSchema = mongoose.model<IStoryChapterModel>('story_chapter', schema, 'story_chapters', true);
+let StoryChapterSchema = mongoose.model<IStoryChapterModel>('story_chapter', schema, 'story_chapters', true)
 
 export class StoryChapterRepository extends RepositoryBase<IStoryChapterModel>
 {
@@ -38,23 +38,17 @@ export class StoryChapterRepository extends RepositoryBase<IStoryChapterModel>
 		super(StoryChapterSchema)
 	}
 
-	createNewChapter(title: string, storyId: string): Promise<IStoryChapterModel> {
+	createNewChapter(title: string, storyId: string, chapterURI: string): Promise<IStoryChapterModel> {
 		return new Promise<IStoryChapterModel>((resolve, reject) => {
 			let story = <IStoryChapterModel>{
 				storyId: storyId,
 				title: title,
-				URI: "",
+				URI: chapterURI,
 			}
 
 			this.create(story).then((user: IStoryChapterModel) => {
 				resolve(user)
 			}).catch(e => reject(e))
-		})
-	}
-
-	findChapters(Ids: string[]): Promise<IStoryChapterModel[]> {
-		return new Promise<IStoryChapterModel[]>((resolve, reject) => {
-			// TODO
 		})
 	}
 }

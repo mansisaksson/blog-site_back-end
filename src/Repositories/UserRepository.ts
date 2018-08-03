@@ -3,7 +3,7 @@ import { RepositoryBase } from './RepositoryBase'
 import { IUserModel } from '../models/User'
 
 let schema = new mongoose.Schema({
-	name: {
+	username: {
 		type: String,
 		required: true
 	},
@@ -32,7 +32,7 @@ let schema = new mongoose.Schema({
 	return this
 })
 
-let UserSchema = mongoose.model<IUserModel>('user', schema, 'users', true);
+let UserSchema = mongoose.model<IUserModel>('user', schema, 'users', true)
 
 export class UserRepository extends RepositoryBase<IUserModel>
 {
@@ -43,7 +43,7 @@ export class UserRepository extends RepositoryBase<IUserModel>
 	createNewUser(name: string, password: string): Promise<IUserModel> {
 		return new Promise<IUserModel>((resolve, reject) => {
 			let user = <IUserModel>{
-				name: name,
+				username: name,
 				password: password
 			}
 
@@ -55,8 +55,13 @@ export class UserRepository extends RepositoryBase<IUserModel>
 
 	findUser(name: string): Promise<IUserModel> {
 		return new Promise<IUserModel>((resolve, reject) => {
-			this.find({ name: name }, 1).then(users => {
-				resolve(users.length > 0 ? <IUserModel>users[0] : undefined)
+			this.find({ username: name }, 1).then(users => {
+				let result = users.length > 0 ? <IUserModel>users[0] : undefined
+				if (result != undefined) {
+					resolve(result)
+				} else {
+					reject()
+				}
 			}).catch(e => reject(e))
 		})
 	}

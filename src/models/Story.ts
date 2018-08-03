@@ -14,9 +14,16 @@ export interface IStoryModel extends mongoose.Document {
 }
 
 export interface IPublicStory {
-	id: string
-	name: string
-	createdAt: Date
+	storyId: string
+	authorId: string
+	title: string
+	upvotes: number
+	downvotes: number
+	thumbnailURI: string
+	submittedAt: number
+	lastUpdated: number
+	revision: number
+	//chapters: ChapterMetaData[]
 }
 
 /// *** Story Chapter Model
@@ -37,8 +44,23 @@ export interface IPublicStoryChapter {
 
 export namespace StoryFunctions {
 
-	export function toPublicStory(userModel: IStoryModel): IPublicStory {
+	export function toPublicStory(storyModel: IStoryModel): IPublicStory {
 		return <IPublicStory>{
+			storyId: storyModel.id,
+			authorId: storyModel.authorId,
+			title: storyModel.title,
+			upvotes: storyModel.upvotes,
+			downvotes: storyModel.downvotes,
+			thumbnailURI: storyModel.thumbnailURI,
+			submittedAt: storyModel.createdAt.getTime(),
+			lastUpdated: storyModel.modifiedAt.getTime(),
+			revision: storyModel.revision,
+			//chapters: ChapterMetaData[]
+		}
+	}
+
+	export function toPublicChapter(chapterModel: IStoryChapterModel): IPublicStoryChapter {
+		return <IPublicStoryChapter>{
 			//TODO
 		}
 	}

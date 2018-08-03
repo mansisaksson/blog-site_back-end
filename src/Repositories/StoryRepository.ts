@@ -33,7 +33,7 @@ let schema = new mongoose.Schema({
 	return this
 })
 
-let StorySchema = mongoose.model<IStoryModel>('story', schema, 'stories', true);
+let StorySchema = mongoose.model<IStoryModel>('story', schema, 'stories', true)
 
 export class StoryRepository extends RepositoryBase<IStoryModel>
 {

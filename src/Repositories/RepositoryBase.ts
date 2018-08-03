@@ -81,6 +81,18 @@ export class RepositoryBase<T extends mongoose.Document> implements IRead<T>, IW
 		})
 	}
 
+	findByIds(_ids: string[]): Promise<T[]> {
+		return new Promise<T[]>((resolve, reject) => {
+			let callback = (err: any, res: T[]) => {
+				if (err) { reject(err) }
+				else { resolve(res) }
+			}
+			let objectIds = []
+			_ids.forEach(id => objectIds.push(this.toObjectId(id)))
+			this._model.find({ _id: { $in: objectIds } }).exec(callback)
+		})
+	}
+
 	findOne(cond?: Object): Promise<T> {
 		return new Promise<T>((resolve, reject) => {
 			let callback = (err: any, res: T) => {
@@ -101,7 +113,7 @@ export class RepositoryBase<T extends mongoose.Document> implements IRead<T>, IW
 		})
 	}
 
-	private toObjectId(_id: string): mongoose.Types.ObjectId {
+	protected toObjectId(_id: string): mongoose.Types.ObjectId {
 		return mongoose.Types.ObjectId.createFromHexString(_id);
 	}
 }
