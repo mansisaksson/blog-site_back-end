@@ -1,10 +1,9 @@
 import { Request, Response, Express, NextFunction } from 'express'
-import { StoryRepository, StoryChapterRepository, ChapterContentRepository } from '../Repositories'
+import { StoryRepository, ChapterContentRepository } from '../Repositories'
 import { StoryFunctions, Protocol, IStoryModel, IStoryChapterModel } from '../models'
 
 module.exports = function (app: Express) {
 	let storyRepo = new StoryRepository()
-	let storyChapterRepo = new StoryChapterRepository()
 	let chapterContentRepo = new ChapterContentRepository()
 
 	// Create Story
@@ -17,14 +16,12 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		storyRepo.createNewStory(title, userId).then((story: IStoryModel) => {
-			chapterContentRepo.createNewChapterContent("").then(chapterContent => {
-				storyChapterRepo.createNewChapter(chapter1Title, story.id, chapterContent.id).then(() => {
-					let publicStory = StoryFunctions.toPublicStory(story)
-					Protocol.success(res, publicStory)
-				}).catch(e => Protocol.error(res, "STORY_CHAPTER_CREATE_FAIL"))
-			}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_CREATE_FAIL"))
-		}).catch(e => Protocol.error(res, "STORY_CREATE_FAIL"))
+		chapterContentRepo.createNewChapterContent("").then(chapterContent => {
+			storyRepo.createNewStory(title, userId, chapter1Title, chapterContent.id).then((story: IStoryModel) => {
+				let publicStory = StoryFunctions.toPublicStory(story)
+				Protocol.success(res, publicStory)
+			}).catch(e => Protocol.error(res, "STORY_CREATE_FAIL"))
+		}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_CREATE_FAIL"))
 	})
 
 	// Delete Story
@@ -36,12 +33,14 @@ module.exports = function (app: Express) {
 		}
 
 		storyRepo.findById(storyId).then(story => {
-			storyChapterRepo.deleteAll(story.chapterIds).then(() => {
+			let URIs = []
+			story.chapters.forEach(chapter => URIs.push(chapter.URI))
+			chapterContentRepo.deleteAll(URIs).then(() => {
 				storyRepo.delete(story.id).then(() => {
 					Protocol.success(res)
-				}).catch(e => Protocol.error(res, "STORY_DELETE_FAIL", "Failed to delete story"))
-			}).catch(e => Protocol.error(res, "STORY_CHAPTER_DELETE_FAIL", "Failed to delete chapter"))
-		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL", "Could not find story"))
+				}).catch(e => Protocol.error(res, "STORY_DELETE_FAIL"))
+			}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_DELETE_FAIL"))
+		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
 	// Get Stories
@@ -61,8 +60,7 @@ module.exports = function (app: Express) {
 		idQuery = ".*" + idQuery + ".*"
 		query = ".*" + query + ".*"
 		storyRepo.find({ authorId: { $regex: idQuery }, title: { $regex: query } }, 100).then((stories: IStoryModel[]) => {
-			let result = []
-			stories.forEach(story => result.push(StoryFunctions.toPublicStory(story)))
+			let result = stories.map(s => StoryFunctions.toPublicStory(s))
 			Protocol.success(res, result)
 		}).catch(e => {
 			console.log(e)
@@ -111,15 +109,49 @@ module.exports = function (app: Express) {
 
 		storyRepo.findById(storyId).then(story => {
 			chapterContentRepo.createNewChapterContent("").then(chapterContent => {
-				storyChapterRepo.createNewChapter(chapterTitle, storyId, chapterContent.id).then(chapter => {
-					story.chapterIds.push(chapter.id)
-					storyRepo.update(story.id, story).then(() => {
-						let publicChapter = StoryFunctions.toPublicChapter(chapter)
-						Protocol.success(res, publicChapter)
-					}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
+				storyRepo.createNewChapter(storyId, chapterTitle, chapterContent.id).then(chapter => {
+					let publicChapter = StoryFunctions.toPublicChapter(story.id, chapter)
+					Protocol.success(res, publicChapter)
 				}).catch(e => Protocol.error(res, "STORY_CHAPTER_CREATE_FAIL"))
 			}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_CREATE_FAIL"))
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
+	})
+
+	// Get Chapters
+	app.get('/api/stories/chapters', function (req: Request, res: Response, next: NextFunction) {
+		let storyId = req.query.chapterIds
+
+		if (!Protocol.validateParams([storyId])) {
+			return Protocol.error(res, "INVALID_PARAM")
+		}
+
+		storyRepo.findById(storyId).then((story) => {
+			let result = story.chapters.map(c => StoryFunctions.toPublicChapter(storyId, c))
+			Protocol.success(res, result)
+		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
+	})
+
+	// Update Chapter
+	app.put('/api/stories/chapters', function (req: Request, res: Response, next: NextFunction) {
+		let chapterId = req.query.chapterId
+		let newMetaData = req.body
+
+		if (!Protocol.validateParams([chapterId, newMetaData])) {
+			return Protocol.error(res, "INVALID_PARAM")
+		}
+
+		storyRepo.findByChapterId(chapterId).then(story => {
+			let chapterIndex = story.chapters.findIndex(chapter => { return chapter.id == chapterId })
+			let properties = ['title']
+			Object.keys(newMetaData).forEach(key => {
+				if (properties.find(p => { return p === key })) {
+					story.chapters[chapterIndex][key] = newMetaData[key]
+				}
+			})
+			storyRepo.update(story.id, story).then(e => {
+				Protocol.success(res)
+			}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
+		}).catch(e => Protocol.error(res, "STORY_CHAPTER_QUERY_FAIL"))
 	})
 
 	// Delete Chapter
@@ -130,30 +162,14 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		storyChapterRepo.findById(chapterId).then(chapter => {
-			storyRepo.findById(chapter.id).then(story => {
-				storyChapterRepo.delete(chapter.id).then(() => {
-					story.chapterIds = story.chapterIds.filter(id => { return id == chapter.id })
-					storyRepo.update(story.id, story).then(() => {
-						Protocol.success(res)
-					}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
-				}).catch(e => Protocol.error(res, "STORY_CHAPTER_DELETE_FAIL"))
-			}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
-		}).catch(e => Protocol.error(res, "STORY_CHAPTER_QUERY_FAIL"))
-	})
-
-	// Get Chapters
-	app.get('/api/stories/chapters', function (req: Request, res: Response, next: NextFunction) {
-		let chapterIds = req.query.chapterIds
-
-		if (!Protocol.validateParams([chapterIds])) {
-			return Protocol.error(res, "INVALID_PARAM")
-		}
-
-		storyChapterRepo.findByIds(chapterIds).then((chapters: IStoryChapterModel[]) => {
-			let result = []
-			chapters.forEach(chapter => result.push(StoryFunctions.toPublicChapter(chapter)))
-			Protocol.success(res, result)
+		storyRepo.findByChapterId(chapterId).then(story => {
+			let chapter = story.chapters.find(chapter => { return chapter.id == chapterId })
+			chapterContentRepo.delete(chapter.URI).then(() => {
+				story.chapters = story.chapters.filter(chapter => { return chapter.id != chapterId })
+				storyRepo.update(story.id, story).then(() => {
+					Protocol.success(res)
+				}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
+			}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_DELETE_FAIL"))
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
@@ -162,36 +178,31 @@ module.exports = function (app: Express) {
 		let chapterId = req.query.chapterId
 		let content = req.body
 
+		console.log(content)
 		if (!Protocol.validateParams([chapterId, content])) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		storyChapterRepo.findById(chapterId).then(chapter => {
+		storyRepo.findChapterById(chapterId).then(chapter => {
 			chapterContentRepo.updateContent(chapter.URI, content).then(() => {
 				Protocol.success(res)
 			}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_UPDATE_FAIL"))
 		}).catch(e => Protocol.error(res, "STORY_CHAPTER_QUERY_FAIL"))
 	})
 
-	// Update Chapter Meta Data
-	app.put('/api/stories/chapters/metaData', function (req: Request, res: Response, next: NextFunction) {
-		let chapterId = req.query.chapterId
-		let newMetaData = req.body
+	// Get Chapter Content
+	app.get('/api/stories/chapters/content', function (req: Request, res: Response, next: NextFunction) {
+		let contentURIs = req.query.contentURIs
 
-		if (!Protocol.validateParams([chapterId, newMetaData])) {
+		if (!Protocol.validateParams([contentURIs])) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		storyChapterRepo.findById(chapterId).then(chapter => {
-			let properties = ['title']
-			Object.keys(newMetaData).forEach(key => {
-				if (properties.find(p => { return p === key })) {
-					chapter[key] = newMetaData[key]
-				}
-			})
-			storyChapterRepo.update(chapterId, chapter).then(e => {
-				Protocol.success(res)
-			}).catch(e => Protocol.error(res, "STORY_CHAPTER_UPDATE_FAIL"))
-		}).catch(e => Protocol.error(res, "STORY_CHAPTER_QUERY_FAIL"))
+		let contentURIArray = JSON.parse(contentURIs)
+		chapterContentRepo.findByIds(contentURIArray).then(contents => {
+			let result = contents.map(c => StoryFunctions.toPublicContent(c))
+			Protocol.success(res, result)
+		}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_QUERY_FAIL"))
 	})
+
 }

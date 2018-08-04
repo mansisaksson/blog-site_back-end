@@ -1,10 +1,14 @@
+[x] Make Chapter MetaData a child schema of stories (http://mongoosejs.com/docs/subdocs.html)
+
+[ ] Session Authentication
+
 [x] Setup two mongoDB repos on my server, one for development and one for production
 
 [x] Create node application that interfaces with this database
 
-[ ] Request/Response protocol e.g. ett sätt att hantera error/success, d.v.s. bör inte förlita mig på http för att hantera detta
+[x] Request/Response protocol e.g. ett sätt att hantera error/success, d.v.s. bör inte förlita mig på http för att hantera detta
 
-[ ] User Requests
+[x] User Requests
 	[x] Look into express and sessions
 
-[ ] Story requests
+[x] Story requests

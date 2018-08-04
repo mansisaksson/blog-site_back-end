@@ -1,6 +1,27 @@
 import * as mongoose from 'mongoose'
 
-/// *** Story Model
+// *** Begin Story Chapter Model
+export interface IStoryChapterModel extends mongoose.Document {
+	title: string
+	URI: string
+	revision: number
+	createdAt: Date
+	modifiedAt: Date
+}
+
+export interface IPublicStoryChapter {
+	chapterId: string
+	storyId: string
+	title: string
+	URI: string
+	revision: number
+	createdAt: number
+	modifiedAt: number
+}
+// *** End Story Chapter Model
+
+
+// ** Begin Story Model
 export interface IStoryModel extends mongoose.Document {
 	authorId: string
 	title: string
@@ -10,7 +31,7 @@ export interface IStoryModel extends mongoose.Document {
 	createdAt: Date
 	modifiedAt: Date
 	revision: number
-	chapterIds: string[]
+	chapters: IStoryChapterModel[]
 }
 
 export interface IPublicStory {
@@ -23,28 +44,31 @@ export interface IPublicStory {
 	submittedAt: number
 	lastUpdated: number
 	revision: number
-	//chapters: ChapterMetaData[]
+	chapters: IPublicStoryChapter[]
+}
+// ** End Story Model
+
+
+// ** Begin Story Content
+export interface IChapterContentModel extends mongoose.Document {
+	content: string
 }
 
-/// *** Story Chapter Model
-export interface IStoryChapterModel extends mongoose.Document {
-	storyId: string
-	title: string
+export interface IPublicChapterContent {
 	URI: string
-	revision: number
-	createdAt: Date
-	modifiedAt: Date
+	content: string
 }
+// ** End Story Content
 
-export interface IPublicStoryChapter {
-	id: string
-	name: string
-	createdAt: Date
-}
 
 export namespace StoryFunctions {
 
 	export function toPublicStory(storyModel: IStoryModel): IPublicStory {
+		let publicChapters: IPublicStoryChapter[]  = []
+		storyModel.chapters.forEach(chapter => {
+			publicChapters.push(this.toPublicChapter(storyModel.id, chapter))
+		})
+
 		return <IPublicStory>{
 			storyId: storyModel.id,
 			authorId: storyModel.authorId,
@@ -55,13 +79,26 @@ export namespace StoryFunctions {
 			submittedAt: storyModel.createdAt.getTime(),
 			lastUpdated: storyModel.modifiedAt.getTime(),
 			revision: storyModel.revision,
-			//chapters: ChapterMetaData[]
+			chapters: publicChapters
 		}
 	}
 
-	export function toPublicChapter(chapterModel: IStoryChapterModel): IPublicStoryChapter {
+	export function toPublicChapter(storyId: string, chapterModel: IStoryChapterModel): IPublicStoryChapter {
 		return <IPublicStoryChapter>{
-			//TODO
+			chapterId: chapterModel.id,
+			storyId: storyId,
+			title: chapterModel.title,
+			URI: chapterModel.URI,
+			revision: chapterModel.revision,
+			createdAt: chapterModel.createdAt.getTime(),
+			modifiedAt: chapterModel.modifiedAt.getTime(),
+		}
+	}
+
+	export function toPublicContent(contentModel: IChapterContentModel): IPublicChapterContent {
+		return <IPublicChapterContent>{
+			URI: contentModel.id,
+			content: contentModel.content
 		}
 	}
 	

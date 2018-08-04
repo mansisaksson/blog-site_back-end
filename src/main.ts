@@ -1,11 +1,15 @@
 import * as mongoose from 'mongoose'
 import * as express from "express"
 import * as session from 'express-session'
+import * as bodyParser from 'body-parser'
 var app = express()
 
 let uri = 'mongodb://localhost/story_site'
 mongoose.connect(uri).then((Mongoose) => {
 	console.log("Connected to database!")
+
+	// Use body parser
+	app.use(bodyParser.text())
 
 	// Enable sessions
 	app.set('trust proxy', 1) // trust first proxy

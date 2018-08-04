@@ -1,9 +1,6 @@
 import * as mongoose from 'mongoose'
 import { RepositoryBase } from './RepositoryBase'
-
-export interface IChapterContentModel extends mongoose.Document {
-	content: string
-}
+import { IChapterContentModel } from '../models';
 
 let schema = new mongoose.Schema({
 	content: String
