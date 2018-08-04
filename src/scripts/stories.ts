@@ -134,7 +134,13 @@ module.exports = function (app: Express) {
 	// Update Chapter
 	app.put('/api/stories/chapters', function (req: Request, res: Response, next: NextFunction) {
 		let chapterId = req.query.chapterId
-		let newMetaData = req.body
+		let newMetaData = {}
+		
+		try {
+			newMetaData = JSON.parse(req.body)	
+		} catch (error) {
+			return Protocol.error(res, "INVALID_PARAM")
+		}
 
 		if (!Protocol.validateParams([chapterId, newMetaData])) {
 			return Protocol.error(res, "INVALID_PARAM")
@@ -178,7 +184,6 @@ module.exports = function (app: Express) {
 		let chapterId = req.query.chapterId
 		let content = req.body
 
-		console.log(content)
 		if (!Protocol.validateParams([chapterId, content])) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}

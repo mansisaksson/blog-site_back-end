@@ -9,7 +9,7 @@ mongoose.connect(uri).then((Mongoose) => {
 	console.log("Connected to database!")
 
 	// Use body parser
-	app.use(bodyParser.text())
+	app.use(bodyParser.text( { limit: '50mb' }))
 
 	// Enable sessions
 	app.set('trust proxy', 1) // trust first proxy
