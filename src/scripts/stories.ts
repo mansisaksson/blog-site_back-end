@@ -16,6 +16,10 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
+		if (!Protocol.validateUserSession(req, userId)) {
+			return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+		}
+
 		chapterContentRepo.createNewChapterContent("").then(chapterContent => {
 			storyRepo.createNewStory(title, userId, chapter1Title, chapterContent.id).then((story: IStoryModel) => {
 				let publicStory = StoryFunctions.toPublicStory(story)
@@ -33,6 +37,9 @@ module.exports = function (app: Express) {
 		}
 
 		storyRepo.findById(storyId).then(story => {
+			if (!Protocol.validateUserSession(req, story.authorId)) {
+				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+			}
 			let URIs = []
 			story.chapters.forEach(chapter => URIs.push(chapter.URI))
 			chapterContentRepo.deleteAll(URIs).then(() => {
@@ -91,6 +98,9 @@ module.exports = function (app: Express) {
 		}
 
 		storyRepo.findById(storyId).then((story: IStoryModel) => {
+			if (!Protocol.validateUserSession(req, story.authorId)) {
+				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+			}
 			story.title = newTitle
 			storyRepo.update(storyId, story).then(story => {
 				Protocol.success(res)
@@ -108,6 +118,9 @@ module.exports = function (app: Express) {
 		}
 
 		storyRepo.findById(storyId).then(story => {
+			if (!Protocol.validateUserSession(req, story.authorId)) {
+				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+			}
 			chapterContentRepo.createNewChapterContent("").then(chapterContent => {
 				storyRepo.createNewChapter(storyId, chapterTitle, chapterContent.id).then(chapter => {
 					let publicChapter = StoryFunctions.toPublicChapter(story.id, chapter)
@@ -147,6 +160,9 @@ module.exports = function (app: Express) {
 		}
 
 		storyRepo.findByChapterId(chapterId).then(story => {
+			if (!Protocol.validateUserSession(req, story.authorId)) {
+				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+			}
 			let chapterIndex = story.chapters.findIndex(chapter => { return chapter.id == chapterId })
 			let properties = ['title']
 			Object.keys(newMetaData).forEach(key => {
@@ -169,6 +185,9 @@ module.exports = function (app: Express) {
 		}
 
 		storyRepo.findByChapterId(chapterId).then(story => {
+			if (!Protocol.validateUserSession(req, story.authorId)) {
+				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+			}
 			let chapter = story.chapters.find(chapter => { return chapter.id == chapterId })
 			chapterContentRepo.delete(chapter.URI).then(() => {
 				story.chapters = story.chapters.filter(chapter => { return chapter.id != chapterId })
@@ -188,11 +207,15 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		storyRepo.findChapterById(chapterId).then(chapter => {
+		storyRepo.findByChapterId(chapterId).then(story => {
+			if (!Protocol.validateUserSession(req, story.authorId)) {
+				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+			}
+			let chapter = story.chapters.find(chapter => { return chapter.id == chapterId })
 			chapterContentRepo.updateContent(chapter.URI, content).then(() => {
 				Protocol.success(res)
 			}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_UPDATE_FAIL"))
-		}).catch(e => Protocol.error(res, "STORY_CHAPTER_QUERY_FAIL"))
+		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
 	// Get Chapter Content

@@ -1,6 +1,10 @@
-[x] Make Chapter MetaData a child schema of stories (http://mongoosejs.com/docs/subdocs.html)
+[ ] Client sends duplicate/way too many requests
 
-[ ] Session Authentication
+[ ] Hash passwords
+
+[x] Session Authentication
+
+[x] Make Chapter MetaData a child schema of stories (http://mongoosejs.com/docs/subdocs.html)
 
 [x] Setup two mongoDB repos on my server, one for development and one for production
 

@@ -3,13 +3,14 @@ import * as express from "express"
 import * as session from 'express-session'
 import * as bodyParser from 'body-parser'
 var app = express()
+var MongoStore = require('connect-mongo')(session)
 
 let uri = 'mongodb://localhost/story_site'
 mongoose.connect(uri).then((Mongoose) => {
 	console.log("Connected to database!")
 
 	// Use body parser
-	app.use(bodyParser.text( { limit: '50mb' }))
+	app.use(bodyParser.text({ limit: '50mb' }))
 
 	// Enable sessions
 	app.set('trust proxy', 1) // trust first proxy
@@ -17,18 +18,23 @@ mongoose.connect(uri).then((Mongoose) => {
 		secret: 'rFeshvHyphDvunfzKQubevCWRHBA4r3XXzJFA677EwZfkSTfPUB9D3eAb6cr2VDTcfVDERzHQagchwxYtnZ6n5NnDQP77HRjebMS',
 		resave: false,
 		saveUninitialized: true,
-		cookie: { secure: true }
+		cookie: { secure: false },
+		store: new MongoStore({ mongooseConnection: mongoose.connection })
 	}))
 
 	// Log requests
 	app.use(function (req, res, next) {
+		console.log("")
+		console.log("*** Begin Request")
 		console.log(req.method + ":" + req.url)
 		next()
 	})
 
 	// Allow cross-origin requests
 	app.use(function (req, res, next) {
-		res.header("Access-Control-Allow-Origin", "*")
+		let origin = req.header("Origin")
+		res.header("Access-Control-Allow-Origin", origin)
+		res.header("Access-Control-Allow-Credentials", "true")
 		res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
 		res.header("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 		next()
