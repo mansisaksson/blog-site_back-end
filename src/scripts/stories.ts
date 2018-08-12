@@ -213,7 +213,7 @@ module.exports = function (app: Express) {
 			}
 			let chapter = story.chapters.find(chapter => { return chapter.id == chapterId })
 			chapterContentRepo.updateContent(chapter.URI, content).then(() => {
-				Protocol.success(res)
+				Protocol.success(res, { URI: chapter.URI })
 			}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_UPDATE_FAIL"))
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})

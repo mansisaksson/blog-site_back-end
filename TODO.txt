@@ -1,3 +1,5 @@
+[ ] Sign out
+
 [ ] Client sends duplicate/way too many requests
 
 [ ] Hash passwords
