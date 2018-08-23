@@ -1,8 +1,8 @@
 [ ] Sign out
 
-[ ] Client sends duplicate/way too many requests
-
 [ ] Hash passwords
+
+[x] Client sends duplicate/way too many requests
 
 [x] Session Authentication
 
