@@ -10,7 +10,7 @@ export interface IUserModel extends mongoose.Document {
 export interface IPublicUser {
 	id: string
 	username: string
-	createdAt: Date
+	createdAt: number
 }
 
 export namespace UserFunctions {
@@ -33,7 +33,7 @@ export namespace UserFunctions {
 		let newPublicUser = <IPublicUser>{
 			id: userModel._id,
 			username: userModel.username,
-			createdAt: userModel.createdAt
+			createdAt: userModel.createdAt.getTime()
 		}
 		return newPublicUser
 	}
