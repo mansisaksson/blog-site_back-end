@@ -70,7 +70,7 @@ export namespace StoryFunctions {
 		})
 
 		return <IPublicStory>{
-			storyId: storyModel.id,
+			storyId: storyModel._id,
 			authorId: storyModel.authorId,
 			title: storyModel.title,
 			upvotes: storyModel.upvotes,

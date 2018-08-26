@@ -45,6 +45,11 @@ export namespace Protocol {
     return returnValue
   }
 
+  export function getUserSession(expressRequest: Request): IUserModel {
+    let user = <IUserModel>expressRequest.session.user
+    return user
+  }
+
   export function validateUserSession(expressRequest: Request, userId: string): boolean {
     let user = <IUserModel>expressRequest.session.user
     return user != undefined && user._id == userId
@@ -54,8 +59,8 @@ export namespace Protocol {
     return new Promise<any>((resolve, reject) => {
       expressRequest.session.user = user
       expressRequest.session.save((err) => {
-        if (err != undefined) {
-          reject()
+        if (err) {
+          reject(err)
         } else {
           resolve()
         }
@@ -63,11 +68,12 @@ export namespace Protocol {
     })
   }
 
-  export function destroyUserSession(expressRequest: Request) {
+  export function destroyUserSession(expressRequest: Request): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-      expressRequest.session.destroy((err) => {
-        if (err != undefined) {
-          reject()
+      expressRequest.session.user = undefined;
+      expressRequest.session.save((err) => {
+        if (err) {
+          reject(err)
         } else {
           resolve()
         }

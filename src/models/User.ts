@@ -31,7 +31,7 @@ export namespace UserFunctions {
 
 	export function toPublicUser(userModel: IUserModel): IPublicUser {
 		let newPublicUser = <IPublicUser>{
-			id: userModel.id,
+			id: userModel._id,
 			username: userModel.username,
 			createdAt: userModel.createdAt
 		}
