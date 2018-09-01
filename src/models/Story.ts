@@ -5,8 +5,8 @@ export interface IStoryChapterModel extends mongoose.Document {
 	title: string
 	URI: string
 	revision: number
-	createdAt: Date
-	modifiedAt: Date
+	createdAt: number
+	modifiedAt: number
 }
 
 export interface IPublicStoryChapter {
@@ -28,8 +28,8 @@ export interface IStoryModel extends mongoose.Document {
 	upvotes: number
 	downvotes: number
 	thumbnailURI: string
-	createdAt: Date
-	modifiedAt: Date
+	createdAt: number
+	modifiedAt: number
 	revision: number
 	chapters: IStoryChapterModel[]
 }
@@ -76,8 +76,8 @@ export namespace StoryFunctions {
 			upvotes: storyModel.upvotes,
 			downvotes: storyModel.downvotes,
 			thumbnailURI: storyModel.thumbnailURI,
-			submittedAt: storyModel.createdAt.getTime(),
-			lastUpdated: storyModel.modifiedAt.getTime(),
+			submittedAt: storyModel.createdAt,
+			lastUpdated: storyModel.modifiedAt,
 			revision: storyModel.revision,
 			chapters: publicChapters
 		}
@@ -85,19 +85,19 @@ export namespace StoryFunctions {
 
 	export function toPublicChapter(storyId: string, chapterModel: IStoryChapterModel): IPublicStoryChapter {
 		return <IPublicStoryChapter>{
-			chapterId: chapterModel.id,
+			chapterId: chapterModel._id,
 			storyId: storyId,
 			title: chapterModel.title,
 			URI: chapterModel.URI,
 			revision: chapterModel.revision,
-			createdAt: chapterModel.createdAt.getTime(),
-			modifiedAt: chapterModel.modifiedAt.getTime(),
+			createdAt: chapterModel.createdAt,
+			modifiedAt: chapterModel.modifiedAt,
 		}
 	}
 
 	export function toPublicContent(contentModel: IChapterContentModel): IPublicChapterContent {
 		return <IPublicChapterContent>{
-			URI: contentModel.id,
+			URI: contentModel._id,
 			content: contentModel.content
 		}
 	}

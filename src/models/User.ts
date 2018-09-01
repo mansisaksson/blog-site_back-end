@@ -3,8 +3,8 @@ import * as mongoose from 'mongoose'
 export interface IUserModel extends mongoose.Document {
 	username: string
 	password: string
-	createdAt: Date
-	modifiedAt: Date
+	createdAt: number
+	modifiedAt: number
 }
 
 export interface IPublicUser {
@@ -33,7 +33,7 @@ export namespace UserFunctions {
 		let newPublicUser = <IPublicUser>{
 			id: userModel._id,
 			username: userModel.username,
-			createdAt: userModel.createdAt.getTime()
+			createdAt: userModel.createdAt
 		}
 		return newPublicUser
 	}

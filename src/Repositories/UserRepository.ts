@@ -12,17 +12,17 @@ let schema = new mongoose.Schema({
 		required: true
 	},
 	createdAt: {
-		type: Date,
+		type: Number,
 		required: false
 	},
 	modifiedAt: {
-		type: Date,
+		type: Number,
 		required: false
 	}
 }).pre('save', function (next) {
 	if (this._doc) {
 		let doc = <IUserModel>this._doc
-		let now = new Date()
+		let now = Date.now()
 		if (!doc.createdAt) {
 			doc.createdAt = now
 		}
@@ -30,6 +30,8 @@ let schema = new mongoose.Schema({
 	}
 	next()
 	return this
+}).post('find', function(doc: IUserModel) {
+	
 })
 
 let UserSchema = mongoose.model<IUserModel>('user', schema, 'users', true)

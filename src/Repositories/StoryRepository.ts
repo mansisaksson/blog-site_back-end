@@ -6,19 +6,12 @@ let chapterSchema = new mongoose.Schema({
 	title: String,
 	URI: String,
 	revision: Number,
-
-	createdAt: {
-		type: Date,
-		default: Date.now
-	},
-	modifiedAt: {
-		type: Date,
-		default: Date.now
-	}
+	createdAt: Number,
+	modifiedAt: Number
 }).pre('save', function (next) {
 	if (this._doc) {
 		let doc = <IStoryChapterModel>this._doc
-		let now = new Date()
+		let now = Date.now()
 		if (!doc.createdAt) {
 			doc.createdAt = now
 		}
@@ -43,18 +36,12 @@ let schema = new mongoose.Schema({
 	revision: Number,
 	chapters: [chapterSchema],
 
-	createdAt: {
-		type: Date,
-		default: Date.now
-	},
-	modifiedAt: {
-		type: Date,
-		default: Date.now
-	}
+	createdAt: Number,
+	modifiedAt: Number
 }).pre('save', function (next) {
 	if (this._doc) {
 		let doc = <IStoryModel>this._doc
-		let now = new Date()
+		let now = Date.now()
 		if (!doc.createdAt) {
 			doc.createdAt = now
 		}
