@@ -1,6 +1,10 @@
-[ ] Sign out
+[ ] Check for duplicate user names
 
 [ ] Hash passwords
+
+[x] Sign out
+
+[x] Validate names and passwords (Regex)
 
 [x] Client sends duplicate/way too many requests
 

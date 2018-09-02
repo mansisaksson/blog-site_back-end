@@ -1,6 +1,6 @@
 import { Request, Response, Express, NextFunction } from 'express'
 import { UserRepository } from '../Repositories'
-import { UserFunctions, Protocol, IUserModel } from '../models';
+import { UserFunctions, Protocol, IUserModel, IPublicUser } from '../models';
 
 module.exports = function (app: Express) {
 	let userRepo = new UserRepository()
@@ -21,9 +21,9 @@ module.exports = function (app: Express) {
 					Protocol.success(res, publicUser)
 				}).catch(error => Protocol.error(res, "SESSION_CREATE_FAIL"))
 			} else {
-				Protocol.error(res, "USER_AUTH_FAIL", "Invalid Password")
+				Protocol.error(res, "USER_AUTH_FAIL")
 			}
-		}).catch(error => Protocol.error(res, "USER_QUERY_FAIL", "Could Not Find User"))
+		}).catch(error => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 
 	// Unauthenticate User
@@ -53,7 +53,7 @@ module.exports = function (app: Express) {
 
 	// Find User
 	app.get('/api/users/query', function (req: Request, res: Response, next: NextFunction) {
-		Protocol.error(res, "NOT_IMPLEMENTED", "Not yet implemented")
+		Protocol.error(res, "NOT_IMPLEMENTED")
 	})
 
 	// Get User
@@ -67,7 +67,7 @@ module.exports = function (app: Express) {
 		userRepo.findById(id).then((user) => {
 			let publicUser = UserFunctions.toPublicUser(user)
 			Protocol.success(res, publicUser)
-		}).catch(error => Protocol.error(res, "USER_QUERY_FAIL", "Could Not Find User"))
+		}).catch(error => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 
 	// Create user
@@ -79,10 +79,19 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		userRepo.createNewUser(userName, userPassword).then((newUser) => {
+		let user = <IUserModel>{}
+		if (!UserFunctions.setName(user, userName)) {
+			return Protocol.error(res, 'USER_NAME_INVALID')
+		}
+
+		if (!UserFunctions.setPassword(user, userPassword)) {
+			return Protocol.error(res, 'USER_PASSWORD_INVALID')
+		}
+
+		userRepo.createNewUser(user.username, user.password).then((newUser) => {
 			let publicUser = UserFunctions.toPublicUser(newUser)
 			Protocol.success(res, publicUser)
-		}).catch(error => Protocol.error(res, "USER_CREATE_FAIL", "Failed to create user"))
+		}).catch(error => Protocol.error(res, "USER_CREATE_FAIL"))
 	})
 
 	// Delete User
@@ -99,7 +108,36 @@ module.exports = function (app: Express) {
 
 		userRepo.delete(user_id).then((result) => {
 			Protocol.success(res, result)
-		}).catch(error => Protocol.error(res, "USER_DELETE_FAIL", "Failed to delete user"))
+		}).catch(error => Protocol.error(res, "USER_DELETE_FAIL"))
 	})
 
+	// Update User
+	app.put('/api/users', function (req: Request, res: Response, next: NextFunction) {
+		let newUser: any = {}
+
+		try {
+			newUser = JSON.parse(req.body)
+		} catch (error) {
+			return Protocol.error(res, "INVALID_PARAM")
+		}
+
+		let userId = newUser['id']
+		userRepo.findById(userId).then((user: IUserModel) => {
+			let success: boolean = true
+
+			if (newUser['username'] && !UserFunctions.setName(user, newUser['username'])) {
+				return Protocol.error(res, "USER_UPDATE_USERNAME_FAIL")
+			}
+
+			if (newUser['password'] && UserFunctions.setPassword(user, newUser['password'])) {
+				return Protocol.error(res, "USER_UPDATE_PASSWORD_FAIL")
+			}
+
+			userRepo.update(userId, user).then(() => {
+				Protocol.createUserSession(req, user).then(() => {
+					Protocol.success(res, UserFunctions.toPublicUser(user))
+				}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
+			}).catch(e => Protocol.error(res, "USER_UPDATE_FAIL"))
+		}).catch(e => Protocol.error(res, "USER_QUERY_FAIL"))
+	})
 }
