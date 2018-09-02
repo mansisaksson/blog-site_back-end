@@ -103,6 +103,18 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 		})
 	}
 
+	findByAuthorId(authorId: string): Promise<IStoryModel[]> {
+		return new Promise<IStoryModel[]>((resolve, reject) => {
+			this.find({ authorId: authorId }, 1).then(stories => {
+				if (stories != undefined && stories.length > 0) {
+					resolve(stories)
+				} else {
+					reject()
+				}
+			}).catch(e => reject(e))
+		})
+	}
+
 	findByChapterId(chapterId: string): Promise<IStoryModel> {
 		return new Promise<IStoryModel>((resolve, reject) => {
 			this.find({ "chapters._id": chapterId }, 1).then(story => {

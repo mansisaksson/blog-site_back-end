@@ -1,9 +1,11 @@
 import { Request, Response, Express, NextFunction } from 'express'
-import { UserRepository } from '../Repositories'
+import { UserRepository, StoryRepository, ChapterContentRepository } from '../Repositories'
 import { UserFunctions, Protocol, IUserModel, IPublicUser } from '../models';
 
 module.exports = function (app: Express) {
 	let userRepo = new UserRepository()
+	let storyRepo = new StoryRepository()
+	let chapterContentRepo = new ChapterContentRepository()
 
 	// Authenticate User
 	app.get('/api/authenticate', function (req: Request, res: Response, next: NextFunction) {
@@ -95,9 +97,10 @@ module.exports = function (app: Express) {
 
 	// Delete User
 	app.delete('/api/users', function (req: Request, res: Response, next: NextFunction) {
-		let user_id = req.query.user_id
+		let user_id = req.query.userId
+		let user_password = req.query.userPassword
 
-		if (!Protocol.validateParams([user_id])) {
+		if (!Protocol.validateParams([user_id, user_password])) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
@@ -105,9 +108,22 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
 		}
 
-		userRepo.delete(user_id).then((result) => {
-			Protocol.success(res, result)
-		}).catch(e => Protocol.error(res, "USER_DELETE_FAIL"))
+		userRepo.findById(user_id).then((user) => {
+			UserFunctions.validatePassword(user, user_password).then(() => {
+				userRepo.delete(user_id).then(() => {
+					storyRepo.findByAuthorId(user_id).then(stories => {
+						let storyIds: string[] = stories.map(s => s._id.toHexString())
+						let URIs: string[] = []
+						stories.forEach(s => s.chapters.forEach(c => URIs.push(c.URI)))
+						chapterContentRepo.deleteAll(URIs).then(() => {
+							storyRepo.deleteAll(storyIds).then(() => {
+								Protocol.success(res)
+							}).catch(e => Protocol.error(res, "STORY_DELETE_FAIL"))
+						}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_DELETE_FAIL"))
+					}).catch(e => Protocol.success(res)) // We assume that the user has no stories
+				}).catch(e => Protocol.error(res, "USER_DELETE_FAIL"))
+			}).catch(e => Protocol.error(res, "USER_PASSWORD_INVALID"))
+		}).catch(e => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 
 	// Update User
