@@ -1,6 +1,6 @@
 [ ] Check for duplicate user names
 
-[ ] Hash passwords
+[x] Hash passwords
 
 [x] Sign out
 

@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import * as bcrypt from 'bcrypt'
 
 export interface IUserModel extends mongoose.Document {
 	username: string
@@ -16,35 +17,43 @@ export interface IPublicUser {
 export namespace UserFunctions {
 
 	export function setName(userModel: IUserModel, name: string): boolean {
-		if (!name) {
-			return false
-		}
-
 		let regex = new RegExp('^[A-Za-z0-9_-]{4,15}$')
-		if (regex.test(name)) {
-			userModel.username = name
-			return true
-		}
-		
-		return false
-	}
-
-	export function setPassword(userModel: IUserModel, password: string): boolean {
-		if (!password) {
+		if (!regex.test(name)) {
 			return false
 		}
 
-		let regex = new RegExp('^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$')
-		if (regex.test(password)) {
-			userModel.password = password
-			return true
-		} 
-		
-		return false
+		userModel.username = name
+		return true
 	}
 
-	export function validatePassword(userModel: IUserModel, password: string): boolean {
-		return userModel.password === password
+	export function setPassword(userModel: IUserModel, password: string): Promise<string> {
+		return new Promise<string>((resolve, reject) => {
+			let regex = new RegExp('^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$')
+			if (!regex.test(password)) {
+				reject()
+			}
+			
+			bcrypt.hash(password, 10, (err, hash) => {
+				if (err) {
+					reject(err)
+				} else {
+					userModel.password = hash
+					resolve(hash)
+				}
+			})
+		})
+	}
+
+	export function validatePassword(userModel: IUserModel, password: string): Promise<any> {
+		return new Promise<any>((resolve, reject) => {
+			bcrypt.compare(password, userModel.password, (err, res) => {
+				if(res) {
+					resolve()
+				} else {
+					reject(err)
+				} 
+			})
+		})
 	}
 
 	export function toPublicUser(userModel: IUserModel): IPublicUser {

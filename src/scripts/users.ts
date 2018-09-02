@@ -15,15 +15,13 @@ module.exports = function (app: Express) {
 		}
 
 		userRepo.findUser(userName).then((user) => {
-			if (UserFunctions.validatePassword(user, userPassword)) {
+			UserFunctions.validatePassword(user, userPassword).then(() => {
 				Protocol.createUserSession(req, user).then(() => {
 					let publicUser = UserFunctions.toPublicUser(user)
 					Protocol.success(res, publicUser)
-				}).catch(error => Protocol.error(res, "SESSION_CREATE_FAIL"))
-			} else {
-				Protocol.error(res, "USER_AUTH_FAIL")
-			}
-		}).catch(error => Protocol.error(res, "USER_QUERY_FAIL"))
+				}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
+			}).catch(e => Protocol.error(res, "USER_AUTH_FAIL"))
+		}).catch(e => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 
 	// Unauthenticate User
@@ -32,7 +30,7 @@ module.exports = function (app: Express) {
 		if (user) {
 			Protocol.destroyUserSession(req).then(() => {
 				Protocol.success(res, true)
-			}).catch(error => Protocol.error(res, "SESSION_INVALIDATE_FAIL"))
+			}).catch(e => Protocol.error(res, "SESSION_INVALIDATE_FAIL"))
 		}
 		else {
 			Protocol.error(res, "SESSION_INVALID")
@@ -79,19 +77,20 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		let user = <IUserModel>{}
+		let user = <IUserModel>{
+			username: '',
+			password: ''
+		}
 		if (!UserFunctions.setName(user, userName)) {
 			return Protocol.error(res, 'USER_NAME_INVALID')
 		}
 
-		if (!UserFunctions.setPassword(user, userPassword)) {
-			return Protocol.error(res, 'USER_PASSWORD_INVALID')
-		}
-
-		userRepo.createNewUser(user.username, user.password).then((newUser) => {
-			let publicUser = UserFunctions.toPublicUser(newUser)
-			Protocol.success(res, publicUser)
-		}).catch(error => Protocol.error(res, "USER_CREATE_FAIL"))
+		UserFunctions.setPassword(user, userPassword).then((hashedPw) => {
+			userRepo.createNewUser(user.username, user.password).then((newUser) => {
+				let publicUser = UserFunctions.toPublicUser(newUser)
+				Protocol.success(res, publicUser)
+			}).catch(e => Protocol.error(res, "USER_CREATE_FAIL"))
+		}).catch(e => Protocol.error(res, 'USER_PASSWORD_INVALID'))
 	})
 
 	// Delete User
@@ -108,7 +107,7 @@ module.exports = function (app: Express) {
 
 		userRepo.delete(user_id).then((result) => {
 			Protocol.success(res, result)
-		}).catch(error => Protocol.error(res, "USER_DELETE_FAIL"))
+		}).catch(e => Protocol.error(res, "USER_DELETE_FAIL"))
 	})
 
 	// Update User
@@ -129,15 +128,22 @@ module.exports = function (app: Express) {
 				return Protocol.error(res, "USER_UPDATE_USERNAME_FAIL")
 			}
 
-			if (newUser['password'] && UserFunctions.setPassword(user, newUser['password'])) {
-				return Protocol.error(res, "USER_UPDATE_PASSWORD_FAIL")
+			let updateUser = () => {
+				userRepo.update(userId, user).then(() => {
+					Protocol.createUserSession(req, user).then(() => {
+						Protocol.success(res, UserFunctions.toPublicUser(user))
+					}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
+				}).catch(e => Protocol.error(res, "USER_UPDATE_FAIL"))
 			}
 
-			userRepo.update(userId, user).then(() => {
-				Protocol.createUserSession(req, user).then(() => {
-					Protocol.success(res, UserFunctions.toPublicUser(user))
-				}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
-			}).catch(e => Protocol.error(res, "USER_UPDATE_FAIL"))
+			if (newUser['password']) {
+				UserFunctions.setPassword(user, newUser['password']).then(() => {
+					updateUser()
+				}).catch(e => Protocol.error(res, "USER_UPDATE_PASSWORD_FAIL"))
+			} else {
+				updateUser()
+			}
+
 		}).catch(e => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 }
