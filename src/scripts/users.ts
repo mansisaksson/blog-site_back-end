@@ -83,16 +83,15 @@ module.exports = function (app: Express) {
 			username: '',
 			password: ''
 		}
-		if (!UserFunctions.setName(user, userName)) {
-			return Protocol.error(res, 'USER_NAME_INVALID')
-		}
 
-		UserFunctions.setPassword(user, userPassword).then((hashedPw) => {
-			userRepo.createNewUser(user.username, user.password).then((newUser) => {
-				let publicUser = UserFunctions.toPublicUser(newUser)
-				Protocol.success(res, publicUser)
-			}).catch(e => Protocol.error(res, "USER_CREATE_FAIL"))
-		}).catch(e => Protocol.error(res, 'USER_PASSWORD_INVALID'))
+		UserFunctions.setName(user, userName).then(() => {
+			UserFunctions.setPassword(user, userPassword).then((hashedPw) => {
+				userRepo.createNewUser(user.username, user.password).then((newUser) => {
+					let publicUser = UserFunctions.toPublicUser(newUser)
+					Protocol.success(res, publicUser)
+				}).catch(e => Protocol.error(res, "USER_CREATE_FAIL"))
+			}).catch(e => Protocol.error(res, 'USER_PASSWORD_INVALID'))
+		}).catch(e => Protocol.error(res, e))
 	})
 
 	// Delete User
@@ -140,26 +139,31 @@ module.exports = function (app: Express) {
 		userRepo.findById(userId).then((user: IUserModel) => {
 			let success: boolean = true
 
-			if (newUser['username'] && !UserFunctions.setName(user, newUser['username'])) {
-				return Protocol.error(res, "USER_UPDATE_USERNAME_FAIL")
+			let onNameUpdated = () => {
+				let onPasswordUpdated = () => {
+					userRepo.update(userId, user).then(() => {
+						Protocol.createUserSession(req, user).then(() => {
+							Protocol.success(res, UserFunctions.toPublicUser(user))
+						}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
+					}).catch(e => Protocol.error(res, "USER_UPDATE_FAIL"))
+				}
+
+				if (newUser['password']) {
+					UserFunctions.setPassword(user, newUser['password']).then(() => {
+						onPasswordUpdated()
+					}).catch(e => Protocol.error(res, "USER_UPDATE_PASSWORD_FAIL"))
+				} else {
+					onPasswordUpdated()
+				}
 			}
 
-			let updateUser = () => {
-				userRepo.update(userId, user).then(() => {
-					Protocol.createUserSession(req, user).then(() => {
-						Protocol.success(res, UserFunctions.toPublicUser(user))
-					}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
-				}).catch(e => Protocol.error(res, "USER_UPDATE_FAIL"))
-			}
-
-			if (newUser['password']) {
-				UserFunctions.setPassword(user, newUser['password']).then(() => {
-					updateUser()
-				}).catch(e => Protocol.error(res, "USER_UPDATE_PASSWORD_FAIL"))
+			if (newUser['username']) {
+				UserFunctions.setName(user, newUser['username']).then(() => {
+					onNameUpdated()
+				}).catch(e => Protocol.error(res, e))
 			} else {
-				updateUser()
+				onNameUpdated()
 			}
-
 		}).catch(e => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 }

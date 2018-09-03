@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
 import * as bcrypt from 'bcrypt'
+import { UserRepository } from '../Repositories';
 
 export interface IUserModel extends mongoose.Document {
 	username: string
@@ -15,24 +16,31 @@ export interface IPublicUser {
 }
 
 export namespace UserFunctions {
+	let userRepo = new UserRepository()
 
-	export function setName(userModel: IUserModel, name: string): boolean {
-		let regex = new RegExp('^[A-Za-z0-9_-]{4,15}$')
-		if (!regex.test(name)) {
-			return false
-		}
-
-		userModel.username = name
-		return true
+	export function setName(userModel: IUserModel, name: string): Promise<string> {
+		return new Promise<string>((resolve, reject) => {
+			let regex = new RegExp('^[A-Za-z0-9_-]{4,15}$')
+			if (!regex.test(name)) {
+				return reject("INVALID_USER_NAME")
+			}
+			
+			userRepo.findUser(name).then(() => {
+				reject("USER_ALREADY_EXISTS")
+			}).catch(e => {
+				userModel.username = name
+				resolve()
+			})
+		})
 	}
 
 	export function setPassword(userModel: IUserModel, password: string): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
 			let regex = new RegExp('^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$')
 			if (!regex.test(password)) {
-				reject()
+				return reject()
 			}
-			
+
 			bcrypt.hash(password, 10, (err, hash) => {
 				if (err) {
 					reject(err)
@@ -47,11 +55,11 @@ export namespace UserFunctions {
 	export function validatePassword(userModel: IUserModel, password: string): Promise<any> {
 		return new Promise<any>((resolve, reject) => {
 			bcrypt.compare(password, userModel.password, (err, res) => {
-				if(res) {
+				if (res) {
 					resolve()
 				} else {
 					reject(err)
-				} 
+				}
 			})
 		})
 	}
@@ -64,5 +72,5 @@ export namespace UserFunctions {
 		}
 		return newPublicUser
 	}
-	
+
 }

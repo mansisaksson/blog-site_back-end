@@ -5,7 +5,8 @@ import { IUserModel } from '../models/User'
 let schema = new mongoose.Schema({
 	username: {
 		type: String,
-		required: true
+		required: true,
+		unique: true
 	},
 	password: {
 		type: String,
