@@ -52,11 +52,11 @@ module.exports = function (app: Express) {
 
 	// Get Stories
 	app.get('/api/stories/query', function (req: Request, res: Response, next: NextFunction) {
-		let userId = req.query.userId
+		let authorId = req.query.userId
 		let searchQuery = req.query.searchQuery
 
-		let idQuery = userId
-		if (!Protocol.validateParams([userId])) {
+		let idQuery = authorId
+		if (!Protocol.validateParams([authorId])) {
 			idQuery = ""
 		}
 		let query = searchQuery
@@ -64,9 +64,26 @@ module.exports = function (app: Express) {
 			query = ""
 		}
 
+		let userSession = Protocol.getUserSession(req)
+		let userSessionId = ''
+		if (userSession) {
+			userSessionId = userSession._id
+		}
+
 		idQuery = ".*" + idQuery + ".*"
 		query = ".*" + query + ".*"
-		storyRepo.find({ authorId: { $regex: idQuery }, title: { $regex: query } }, 100).then((stories: IStoryModel[]) => {
+
+		let mgdbQuery = {
+			title: { $regex: query },
+			$and: [{
+				$or: [
+					{ accessibility: 'public' },
+					{ authorId: userSessionId }
+				]
+			}, { authorId: { $regex: idQuery } }
+			]
+		}
+		storyRepo.find(mgdbQuery, 100).then((stories: IStoryModel[]) => {
 			let result = stories.map(s => StoryFunctions.toPublicStory(s))
 			Protocol.success(res, result)
 		}).catch(e => {
@@ -83,8 +100,18 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
+		let userSession = Protocol.getUserSession(req)
+		let userSessionId = ''
+		if (userSession) {
+			userSessionId = userSession._id
+		}
+		
 		storyRepo.findById(storyId).then((story: IStoryModel) => {
-			Protocol.success(res, StoryFunctions.toPublicStory(story))
+			if (story.accessibility == 'public' || story._id == userSessionId) {
+				Protocol.success(res, StoryFunctions.toPublicStory(story))
+			} else {
+				Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+			}
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
@@ -138,9 +165,19 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
+		let userSession = Protocol.getUserSession(req)
+		let userSessionId = ''
+		if (userSession) {
+			userSessionId = userSession._id
+		}
+
 		storyRepo.findById(storyId).then((story) => {
-			let result = story.chapters.map(c => StoryFunctions.toPublicChapter(storyId, c))
-			Protocol.success(res, result)
+			if (story.accessibility == 'public' || story._id == userSessionId) {
+				let result = story.chapters.map(c => StoryFunctions.toPublicChapter(storyId, c))
+				Protocol.success(res, result)
+			} else {
+				Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+			}
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
@@ -148,9 +185,9 @@ module.exports = function (app: Express) {
 	app.put('/api/stories/chapters', function (req: Request, res: Response, next: NextFunction) {
 		let chapterId = req.query.chapterId
 		let newMetaData = {}
-		
+
 		try {
-			newMetaData = JSON.parse(req.body)	
+			newMetaData = JSON.parse(req.body)
 		} catch (error) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
@@ -226,6 +263,7 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
+		// TODO: Do not allow access if private
 		let contentURIArray = JSON.parse(contentURIs)
 		chapterContentRepo.findByIds(contentURIArray).then(contents => {
 			let result = contents.map(c => StoryFunctions.toPublicContent(c))

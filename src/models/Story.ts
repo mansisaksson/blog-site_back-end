@@ -25,6 +25,7 @@ export interface IPublicStoryChapter {
 export interface IStoryModel extends mongoose.Document {
 	authorId: string
 	title: string
+	accessibility: string,
 	upvotes: number
 	downvotes: number
 	thumbnailURI: string
@@ -38,6 +39,7 @@ export interface IPublicStory {
 	storyId: string
 	authorId: string
 	title: string
+	accessibility: string,
 	upvotes: number
 	downvotes: number
 	thumbnailURI: string

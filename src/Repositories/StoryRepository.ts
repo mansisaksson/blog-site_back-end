@@ -30,6 +30,7 @@ let chapterSchema = new mongoose.Schema({
 let schema = new mongoose.Schema({
 	authorId: String,
 	title: String,
+	accessibility: String,
 	upvotes: Number,
 	downvotes: Number,
 	thumbnailURI: String,
@@ -41,6 +42,11 @@ let schema = new mongoose.Schema({
 }).pre('save', function (next) {
 	if (this._doc) {
 		let doc = <IStoryModel>this._doc
+
+		if (!doc.accessibility) {
+			doc.accessibility = 'private'
+		}
+
 		let now = Date.now()
 		if (!doc.createdAt) {
 			doc.createdAt = now
@@ -55,7 +61,13 @@ let schema = new mongoose.Schema({
 	}
 	next()
 	return this
-})
+ })//.post('find', function(doc: IStoryModel, next: mongoose.HookNextFunction) {
+// 	if (!doc.accessibility) {
+// 		doc['accessibility'] = 'private'
+// 	}
+// 	next()
+// 	return this
+// })
 
 let StorySchema = mongoose.model<IStoryModel>('story', schema, 'stories', true)
 
@@ -75,6 +87,7 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 			let story = <IStoryModel>{
 				authorId: authorId,
 				title: title,
+				accessibility: 'private',
 				upvotes: 0,
 				downvotes: 0,
 				thumbnailURI: "",

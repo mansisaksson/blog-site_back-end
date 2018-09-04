@@ -31,9 +31,8 @@ let schema = new mongoose.Schema({
 	}
 	next()
 	return this
-}).post('find', function(doc: IUserModel) {
-	
-})
+})// .post('find', function(doc: IUserModel) {
+// })
 
 let UserSchema = mongoose.model<IUserModel>('user', schema, 'users', true)
 
