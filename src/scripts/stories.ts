@@ -106,12 +106,9 @@ module.exports = function (app: Express) {
 			userSessionId = userSession._id
 		}
 		
+		// TODO: Don't return if private
 		storyRepo.findById(storyId).then((story: IStoryModel) => {
-			if (story.accessibility == 'public' || story._id == userSessionId) {
 				Protocol.success(res, StoryFunctions.toPublicStory(story))
-			} else {
-				Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
-			}
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
@@ -171,13 +168,10 @@ module.exports = function (app: Express) {
 			userSessionId = userSession._id
 		}
 
+		// TODO: Don't return if private
 		storyRepo.findById(storyId).then((story) => {
-			if (story.accessibility == 'public' || story._id == userSessionId) {
-				let result = story.chapters.map(c => StoryFunctions.toPublicChapter(storyId, c))
-				Protocol.success(res, result)
-			} else {
-				Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
-			}
+			let result = story.chapters.map(c => StoryFunctions.toPublicChapter(storyId, c))
+			Protocol.success(res, result)
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
