@@ -74,6 +74,7 @@ export namespace StoryFunctions {
 		return <IPublicStory>{
 			storyId: storyModel._id,
 			authorId: storyModel.authorId,
+			accessibility: storyModel.accessibility,
 			title: storyModel.title,
 			upvotes: storyModel.upvotes,
 			downvotes: storyModel.downvotes,
