@@ -65,6 +65,27 @@ export interface IPublicChapterContent {
 
 export namespace StoryFunctions {
 
+	export function setStoryTitle(story: IStoryModel, newTitle: string): boolean {
+		if (!newTitle) {
+			return false
+		}
+		// TODO: Validate title
+		story.title = newTitle
+		return true
+	}
+
+	export function setStoryAccesibility(story: IStoryModel, newAccesibility: string): boolean {
+		if (!newAccesibility) {
+			return false
+		}
+		let allowedAccesibility = [ 'public', 'private', 'unlisted' ]
+		if (!allowedAccesibility.find(e => e == newAccesibility)) {
+			return false
+		}
+		story.accessibility = newAccesibility
+		return true
+	}
+
 	export function toPublicStory(storyModel: IStoryModel): IPublicStory {
 		let publicChapters: IPublicStoryChapter[]  = []
 		storyModel.chapters.forEach(chapter => {

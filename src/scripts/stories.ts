@@ -113,11 +113,17 @@ module.exports = function (app: Express) {
 	})
 
 	// Update Story Title
-	app.put('/api/stories/title', function (req: Request, res: Response, next: NextFunction) {
+	app.put('/api/stories', function (req: Request, res: Response, next: NextFunction) {
 		let storyId = req.query.storyId
-		let newTitle = req.body
+		let newStoryProperties: any = {}
 
-		if (!Protocol.validateParams([storyId, newTitle])) {
+		try {
+			newStoryProperties = JSON.parse(req.body)
+		} catch (error) {
+			return Protocol.error(res, "INVALID_PARAM")
+		}
+
+		if (!Protocol.validateParams([storyId, newStoryProperties])) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
@@ -125,9 +131,21 @@ module.exports = function (app: Express) {
 			if (!Protocol.validateUserSession(req, story.authorId)) {
 				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
 			}
-			story.title = newTitle
-			storyRepo.update(storyId, story).then(story => {
-				Protocol.success(res)
+
+			if (newStoryProperties['title']) {
+				if (!StoryFunctions.setStoryTitle(story, newStoryProperties.title)) {
+					return Protocol.error(res, "INVALID_STORY_TITLE")
+				}
+			}
+
+			if (newStoryProperties['accessibility']) {
+				if (!StoryFunctions.setStoryAccesibility(story, newStoryProperties.accessibility)) {
+					return Protocol.error(res, "INVALID_STORY_ACCESSIBILITY")
+				}
+			}
+
+			storyRepo.update(storyId, story).then(() => {
+				Protocol.success(res, StoryFunctions.toPublicStory(story))
 			}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
@@ -162,12 +180,6 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		let userSession = Protocol.getUserSession(req)
-		let userSessionId = ''
-		if (userSession) {
-			userSessionId = userSession._id
-		}
-
 		// TODO: Don't return if private
 		storyRepo.findById(storyId).then((story) => {
 			let result = story.chapters.map(c => StoryFunctions.toPublicChapter(storyId, c))
@@ -178,15 +190,15 @@ module.exports = function (app: Express) {
 	// Update Chapter
 	app.put('/api/stories/chapters', function (req: Request, res: Response, next: NextFunction) {
 		let chapterId = req.query.chapterId
-		let newMetaData = {}
+		let newChapterProperties = {}
 
 		try {
-			newMetaData = JSON.parse(req.body)
+			newChapterProperties = JSON.parse(req.body)
 		} catch (error) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		if (!Protocol.validateParams([chapterId, newMetaData])) {
+		if (!Protocol.validateParams([chapterId, newChapterProperties])) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
@@ -196,13 +208,13 @@ module.exports = function (app: Express) {
 			}
 			let chapterIndex = story.chapters.findIndex(chapter => { return chapter.id == chapterId })
 			let properties = ['title']
-			Object.keys(newMetaData).forEach(key => {
+			Object.keys(newChapterProperties).forEach(key => {
 				if (properties.find(p => { return p === key })) {
-					story.chapters[chapterIndex][key] = newMetaData[key]
+					story.chapters[chapterIndex][key] = newChapterProperties[key]
 				}
 			})
 			storyRepo.update(story.id, story).then(e => {
-				Protocol.success(res)
+				Protocol.success(res, StoryFunctions.toPublicChapter(story._id, story.chapters[chapterIndex]))
 			}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
 		}).catch(e => Protocol.error(res, "STORY_CHAPTER_QUERY_FAIL"))
 	})
