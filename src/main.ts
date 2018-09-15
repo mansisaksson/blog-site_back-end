@@ -10,7 +10,12 @@ mongoose.connect(uri).then((Mongoose) => {
 	console.log("Connected to database!")
 
 	// Use body parser
-	app.use(bodyParser.text({ limit: '50mb' }))
+
+	// TODO: bodyParser.json, all komunikation bör göras genom json. För data bör jag enkoda datan i base64
+	// och skicka det som ett json fält.
+	app.use(bodyParser.json({ 
+		limit: '50mb'
+	}))
 
 	// Enable sessions
 	app.set('trust proxy', 1) // trust first proxy

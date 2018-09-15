@@ -1,6 +1,5 @@
 import { Response, Request } from 'express'
 import { IUserModel } from './User';
-import { resolve } from 'url';
 
 interface RequestResponse {
   success: boolean

@@ -8,9 +8,9 @@ module.exports = function (app: Express) {
 	let chapterContentRepo = new ChapterContentRepository()
 
 	// Authenticate User
-	app.get('/api/authenticate', function (req: Request, res: Response, next: NextFunction) {
-		let userName = req.query.user_name
-		let userPassword = req.query.user_password
+	app.post('/api/authenticate', function (req: Request, res: Response, next: NextFunction) {
+		let userName = req.body['user_name']
+		let userPassword = req.body['user_password']
 
 		if (!Protocol.validateParams([userName, userPassword])) {
 			return Protocol.error(res, "INVALID_PARAM")
@@ -39,7 +39,7 @@ module.exports = function (app: Express) {
 		}
 	})
 
-	// Authenticate User
+	// Get Session
 	app.get('/api/session', function (req: Request, res: Response, next: NextFunction) {
 		let user: IUserModel = Protocol.getUserSession(req);
 		if (user) {
@@ -72,8 +72,8 @@ module.exports = function (app: Express) {
 
 	// Create user
 	app.post('/api/users', function (req: Request, res: Response, next: NextFunction) {
-		let userName = req.query.user_name
-		let userPassword = req.query.user_password
+		let userName = req.body['userName']
+		let userPassword = req.body['userPassword']
 
 		if (!Protocol.validateParams([userName, userPassword])) {
 			return Protocol.error(res, "INVALID_PARAM")
@@ -92,6 +92,46 @@ module.exports = function (app: Express) {
 				}).catch(e => Protocol.error(res, "USER_CREATE_FAIL"))
 			}).catch(e => Protocol.error(res, 'USER_PASSWORD_INVALID'))
 		}).catch(e => Protocol.error(res, e))
+	})
+
+	// Update User
+	app.put('/api/users', function (req: Request, res: Response, next: NextFunction) {
+		let userId = req.query.userId
+		let newUser: any = req.body
+
+		if (!Protocol.validateParams([userId])) {
+			return Protocol.error(res, "INVALID_PARAM")
+		}
+		
+		userRepo.findById(userId).then((user: IUserModel) => {
+			let success: boolean = true
+
+			let onNameUpdated = () => {
+				let onPasswordUpdated = () => {
+					userRepo.update(userId, user).then(() => {
+						Protocol.createUserSession(req, user).then(() => {
+							Protocol.success(res, UserFunctions.toPublicUser(user))
+						}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
+					}).catch(e => Protocol.error(res, "USER_UPDATE_FAIL"))
+				}
+
+				if (newUser['password']) {
+					UserFunctions.setPassword(user, newUser['password']).then(() => {
+						onPasswordUpdated()
+					}).catch(e => Protocol.error(res, "USER_UPDATE_PASSWORD_FAIL"))
+				} else {
+					onPasswordUpdated()
+				}
+			}
+
+			if (newUser['username']) {
+				UserFunctions.setName(user, newUser['username']).then(() => {
+					onNameUpdated()
+				}).catch(e => Protocol.error(res, e))
+			} else {
+				onNameUpdated()
+			}
+		}).catch(e => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 
 	// Delete User
@@ -125,45 +165,4 @@ module.exports = function (app: Express) {
 		}).catch(e => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 
-	// Update User
-	app.put('/api/users', function (req: Request, res: Response, next: NextFunction) {
-		let newUser: any = {}
-
-		try {
-			newUser = JSON.parse(req.body)
-		} catch (error) {
-			return Protocol.error(res, "INVALID_PARAM")
-		}
-
-		let userId = newUser['id']
-		userRepo.findById(userId).then((user: IUserModel) => {
-			let success: boolean = true
-
-			let onNameUpdated = () => {
-				let onPasswordUpdated = () => {
-					userRepo.update(userId, user).then(() => {
-						Protocol.createUserSession(req, user).then(() => {
-							Protocol.success(res, UserFunctions.toPublicUser(user))
-						}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
-					}).catch(e => Protocol.error(res, "USER_UPDATE_FAIL"))
-				}
-
-				if (newUser['password']) {
-					UserFunctions.setPassword(user, newUser['password']).then(() => {
-						onPasswordUpdated()
-					}).catch(e => Protocol.error(res, "USER_UPDATE_PASSWORD_FAIL"))
-				} else {
-					onPasswordUpdated()
-				}
-			}
-
-			if (newUser['username']) {
-				UserFunctions.setName(user, newUser['username']).then(() => {
-					onNameUpdated()
-				}).catch(e => Protocol.error(res, e))
-			} else {
-				onNameUpdated()
-			}
-		}).catch(e => Protocol.error(res, "USER_QUERY_FAIL"))
-	})
 }
