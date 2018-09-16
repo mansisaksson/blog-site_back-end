@@ -104,8 +104,6 @@ module.exports = function (app: Express) {
 		}
 		
 		userRepo.findById(userId).then((user: IUserModel) => {
-			let success: boolean = true
-
 			let onNameUpdated = () => {
 				let onPasswordUpdated = () => {
 					userRepo.update(userId, user).then(() => {

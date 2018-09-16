@@ -54,6 +54,12 @@ module.exports = function (app: Express) {
 				}
 			}
 
+			if (newStoryProperties['thumbnail']) {
+				if (!StoryFunctions.setStoryThumbnail(story, newStoryProperties.thumbnail)) {
+					return Protocol.error(res, "INVALID_STORY_THUMBNAIL")
+				}
+			}
+
 			storyRepo.update(storyId, story).then(() => {
 				Protocol.success(res, StoryFunctions.toPublicStory(story))
 			}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))

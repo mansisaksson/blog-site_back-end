@@ -86,6 +86,13 @@ export namespace StoryFunctions {
 		return true
 	}
 
+	export function setStoryThumbnail(story: IStoryModel, newThumbnailData: string): boolean {
+		// Validate new thumbnail
+		// Delete old thumbnail
+		// set story thumbnail URI
+		return true
+	}
+
 	export function toPublicStory(storyModel: IStoryModel): IPublicStory {
 		let publicChapters: IPublicStoryChapter[]  = []
 		storyModel.chapters.forEach(chapter => {
