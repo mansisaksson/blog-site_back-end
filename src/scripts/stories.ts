@@ -63,10 +63,7 @@ module.exports = function (app: Express) {
 			if (newStoryProperties['thumbnail']) {
 				StoryFunctions.setStoryThumbnail(story, newStoryProperties.thumbnail).then(() => {
 					updateStory()
-				}).catch(e => {
-					console.log(e)
-					Protocol.error(res, "INVALID_STORY_THUMBNAIL")
-				})
+				}).catch(e => Protocol.error(res, "INVALID_STORY_THUMBNAIL"))
 			} else {
 				updateStory()
 			}

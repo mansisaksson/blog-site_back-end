@@ -1,30 +1,35 @@
 import * as fs from 'fs'
 import * as sharp from 'sharp'
+import * as uuidv1 from 'uuid/v1'
+import * as glob from 'glob'
 
 export namespace FileRepository {
-	export function saveImage_Base64(base64Data: string, format: string, resizeOptions?: { width: number, height: number }): Promise<any> {
-		return FileRepository.saveImage(Buffer.from(base64Data).toString('base64'), format, resizeOptions)
-	}
-
-	export function saveImage(data: string, format: string, resizeOptions?: { width: number, height: number }): Promise<any> {
+	export function saveImage_Base64(base64Data: string, format: string, resizeOptions?: { width: number, height: number }): Promise<string> {
 		return new Promise<any>(function (resolve, reject) {
-			let transform: sharp.SharpInstance = sharp()
-			if (resizeOptions) {
-				transform.toFormat(format)
-				transform.resize(resizeOptions.width, resizeOptions.height)
-			}
-
 			try {
-				fs.writeFile('tmp/resize_tmp.png', new Buffer(data), (err) => {
-					if (err) {
-						return reject(err)
-					}
-					console.log("The file was succesfully saved!");
-					resolve()
-				})
-				// TODO: https://malcoded.com/posts/nodejs-image-resize-express-sharp
-				// const readStream = fs.createReadStream('tmp/resize_tmp')
-				// readStream.pipe(transform)
+				if (!fs.existsSync('tmp')) {
+					fs.mkdirSync('tmp')
+				}
+
+				if (!fs.existsSync('uploads')) {
+					fs.mkdirSync('uploads')
+				}
+
+				let tmpName = 'resize_tmp.' + format
+				fs.writeFileSync('tmp/' + tmpName, Buffer.from(base64Data, 'base64'), { encoding: 'binary' })
+
+				let transform: sharp.SharpInstance = sharp()
+				if (resizeOptions) {
+					transform.toFormat(format)
+					transform.resize(resizeOptions.width, resizeOptions.height)
+				}
+
+				let fileId = uuidv1()
+				let filePath = 'uploads/' + fileId + '.' + format
+				fs.createReadStream('tmp/' + tmpName)
+					.pipe(transform)
+					.pipe(fs.createWriteStream(filePath))
+				resolve(fileId)
 			} catch (error) {
 				reject(error)
 			}
@@ -37,5 +42,23 @@ export namespace FileRepository {
 
 	export function loadFileAsBase64(fileId: string): string {
 		return ""
+	}
+
+	export function deleteFile(fileId: string, options?: { ignoreError: boolean }): Promise<any> {
+		return new Promise<any>(function (resolve, reject) {
+			try {
+				let filePath = 'uploads/' + fileId + '*'
+				glob(filePath, {}, function (er, files) {
+					for (const file of files) {
+						fs.unlinkSync(file)
+						console.log("Remove: ")
+						console.log(file)
+					}
+					resolve()
+				})
+			} catch (error) {
+				reject(error)
+			}
+		})
 	}
 }

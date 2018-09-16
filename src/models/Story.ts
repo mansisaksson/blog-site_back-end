@@ -89,9 +89,11 @@ export namespace StoryFunctions {
 
 	export function setStoryThumbnail(story: IStoryModel, newThumbnailData: string): Promise<any> {
 		return new Promise<any>(function (resolve, reject) {
-			FileRepository.saveImage_Base64(newThumbnailData, 'png', { width: 256, height: 151 }).then(() => {
-				story.thumbnailURI = 'TODO'
-				resolve()
+			FileRepository.saveImage_Base64(newThumbnailData, 'png', { width: 256, height: 151 }).then((fileId) => {
+				FileRepository.deleteFile(story.thumbnailURI, { ignoreError: true }).then(() => {
+					story.thumbnailURI = fileId
+					resolve()
+				}).catch(e => reject(e))
 			}).catch(e => reject(e))
 		})
 	}
