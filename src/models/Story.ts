@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import { FileRepository } from '../Repositories';
 
 // *** Begin Story Chapter Model
 export interface IStoryChapterModel extends mongoose.Document {
@@ -78,7 +79,7 @@ export namespace StoryFunctions {
 		if (!newAccesibility) {
 			return false
 		}
-		let allowedAccesibility = [ 'public', 'private', 'unlisted' ]
+		let allowedAccesibility = ['public', 'private', 'unlisted']
 		if (!allowedAccesibility.find(e => e == newAccesibility)) {
 			return false
 		}
@@ -86,15 +87,17 @@ export namespace StoryFunctions {
 		return true
 	}
 
-	export function setStoryThumbnail(story: IStoryModel, newThumbnailData: string): boolean {
-		// Validate new thumbnail
-		// Delete old thumbnail
-		// set story thumbnail URI
-		return true
+	export function setStoryThumbnail(story: IStoryModel, newThumbnailData: string): Promise<any> {
+		return new Promise<any>(function (resolve, reject) {
+			FileRepository.saveImage_Base64(newThumbnailData, 'png', { width: 256, height: 151 }).then(() => {
+				story.thumbnailURI = 'TODO'
+				resolve()
+			}).catch(e => reject(e))
+		})
 	}
 
 	export function toPublicStory(storyModel: IStoryModel): IPublicStory {
-		let publicChapters: IPublicStoryChapter[]  = []
+		let publicChapters: IPublicStoryChapter[] = []
 		storyModel.chapters.forEach(chapter => {
 			publicChapters.push(this.toPublicChapter(storyModel.id, chapter))
 		})
@@ -132,5 +135,5 @@ export namespace StoryFunctions {
 			content: contentModel.content
 		}
 	}
-	
+
 }

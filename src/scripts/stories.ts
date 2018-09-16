@@ -10,7 +10,7 @@ module.exports = function (app: Express) {
 	app.post('/api/stories', function (req: Request, res: Response, next: NextFunction) {
 		let userId = req.query.userId
 		let title = req.body['title'] ? req.body['title'] : "Default Title"
-		let chapter1Title  = req.body['chapter1Title'] ? req.body['chapter1Title'] : "Default Chapter Title"
+		let chapter1Title = req.body['chapter1Title'] ? req.body['chapter1Title'] : "Default Chapter Title"
 
 		if (!Protocol.validateParams([userId])) {
 			return Protocol.error(res, "INVALID_PARAM")
@@ -42,6 +42,12 @@ module.exports = function (app: Express) {
 				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
 			}
 
+			let updateStory = function () {
+				storyRepo.update(storyId, story).then(() => {
+					Protocol.success(res, StoryFunctions.toPublicStory(story))
+				}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
+			}
+
 			if (newStoryProperties['title']) {
 				if (!StoryFunctions.setStoryTitle(story, newStoryProperties.title)) {
 					return Protocol.error(res, "INVALID_STORY_TITLE")
@@ -55,14 +61,15 @@ module.exports = function (app: Express) {
 			}
 
 			if (newStoryProperties['thumbnail']) {
-				if (!StoryFunctions.setStoryThumbnail(story, newStoryProperties.thumbnail)) {
-					return Protocol.error(res, "INVALID_STORY_THUMBNAIL")
-				}
+				StoryFunctions.setStoryThumbnail(story, newStoryProperties.thumbnail).then(() => {
+					updateStory()
+				}).catch(e => {
+					console.log(e)
+					Protocol.error(res, "INVALID_STORY_THUMBNAIL")
+				})
+			} else {
+				updateStory()
 			}
-
-			storyRepo.update(storyId, story).then(() => {
-				Protocol.success(res, StoryFunctions.toPublicStory(story))
-			}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
@@ -143,10 +150,10 @@ module.exports = function (app: Express) {
 		if (userSession) {
 			userSessionId = userSession._id
 		}
-		
+
 		// TODO: Don't return if private
 		storyRepo.findById(storyId).then((story: IStoryModel) => {
-				Protocol.success(res, StoryFunctions.toPublicStory(story))
+			Protocol.success(res, StoryFunctions.toPublicStory(story))
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
