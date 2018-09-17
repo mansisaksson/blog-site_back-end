@@ -3,20 +3,28 @@ import * as sharp from 'sharp'
 import * as uuidv1 from 'uuid/v1'
 import * as glob from 'glob'
 
+export interface FileData {
+	data: Buffer,
+	format: string
+}
+
 export namespace FileRepository {
+	let tmpDir = 'tmp/'
+	let filesDir = 'uploads/'
+
 	export function saveImage_Base64(base64Data: string, format: string, resizeOptions?: { width: number, height: number }): Promise<string> {
 		return new Promise<any>(function (resolve, reject) {
 			try {
-				if (!fs.existsSync('tmp')) {
-					fs.mkdirSync('tmp')
+				if (!fs.existsSync(tmpDir)) {
+					fs.mkdirSync(tmpDir)
 				}
 
-				if (!fs.existsSync('uploads')) {
-					fs.mkdirSync('uploads')
+				if (!fs.existsSync(filesDir)) {
+					fs.mkdirSync(filesDir)
 				}
 
 				let tmpName = 'resize_tmp.' + format
-				fs.writeFileSync('tmp/' + tmpName, Buffer.from(base64Data, 'base64'), { encoding: 'binary' })
+				fs.writeFileSync(tmpDir + tmpName, Buffer.from(base64Data, 'base64'), { encoding: 'binary' })
 
 				let transform: sharp.SharpInstance = sharp()
 				if (resizeOptions) {
@@ -25,8 +33,8 @@ export namespace FileRepository {
 				}
 
 				let fileId = uuidv1()
-				let filePath = 'uploads/' + fileId + '.' + format
-				fs.createReadStream('tmp/' + tmpName)
+				let filePath = filesDir + fileId + '.' + format
+				fs.createReadStream(tmpDir + tmpName)
 					.pipe(transform)
 					.pipe(fs.createWriteStream(filePath))
 				resolve(fileId)
@@ -36,12 +44,25 @@ export namespace FileRepository {
 		})
 	}
 
-	export function loadFile(fileId: string): string {
-		return ""
-	}
-
-	export function loadFileAsBase64(fileId: string): string {
-		return ""
+	export function loadFile(fileId: string): Promise<FileData> {
+		return new Promise<FileData>((resolve, reject) => {
+			try {
+				let filePath = 'uploads/' + fileId + '*'
+				glob(filePath, {}, function (er, files: string[]) {
+					if (files.length > 0) {
+						let fileData = <FileData>{
+							data: fs.readFileSync(files[0]),
+							format: files[0].substr(files[0].lastIndexOf('.'))
+						}
+						resolve(fileData)
+					} else {
+						reject(er)
+					}
+				})
+			} catch (error) {
+				reject()
+			}
+		})
 	}
 
 	export function deleteFile(fileId: string, options?: { ignoreError: boolean }): Promise<any> {

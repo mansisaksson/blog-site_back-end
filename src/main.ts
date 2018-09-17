@@ -13,7 +13,7 @@ mongoose.connect(uri).then((Mongoose) => {
 
 	// TODO: bodyParser.json, all komunikation bör göras genom json. För data bör jag enkoda datan i base64
 	// och skicka det som ett json fält.
-	app.use(bodyParser.json({ 
+	app.use(bodyParser.json({
 		limit: '50mb'
 	}))
 
@@ -44,6 +44,9 @@ mongoose.connect(uri).then((Mongoose) => {
 		res.header("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 		next()
 	})
+
+	// Listen for file requests
+	require('./scripts/files')(app)
 
 	// Listen for user requests
 	require('./scripts/users')(app)
