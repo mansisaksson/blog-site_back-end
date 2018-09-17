@@ -11,10 +11,7 @@ module.exports = function (app: Express) {
 				res.setHeader('Content-Type', fileData.format)
 				res.send(fileData.data)
 				res.end()
-			}).catch(e => { 
-				console.log(e)
-				res.end()
-			})
+			}).catch(e => res.end())
 		}
 	})
 }

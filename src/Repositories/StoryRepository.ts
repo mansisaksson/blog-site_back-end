@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose'
 import { RepositoryBase } from './RepositoryBase'
 import { IStoryModel, IStoryChapterModel } from '../models'
 
+// Chapter Model
 let chapterSchema = new mongoose.Schema({
 	title: String,
 	URI: String,
@@ -27,9 +28,11 @@ let chapterSchema = new mongoose.Schema({
 	return this
 })
 
+// Story Model
 let schema = new mongoose.Schema({
 	authorId: String,
 	title: String,
+	description: String,
 	accessibility: String,
 	upvotes: Number,
 	downvotes: Number,

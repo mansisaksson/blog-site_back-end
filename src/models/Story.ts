@@ -26,7 +26,8 @@ export interface IPublicStoryChapter {
 export interface IStoryModel extends mongoose.Document {
 	authorId: string
 	title: string
-	accessibility: string,
+	description: string
+	accessibility: string
 	upvotes: number
 	downvotes: number
 	thumbnailURI: string
@@ -39,6 +40,7 @@ export interface IStoryModel extends mongoose.Document {
 export interface IPublicStory {
 	storyId: string
 	authorId: string
+	description: string
 	title: string
 	accessibility: string,
 	upvotes: number
@@ -67,11 +69,22 @@ export interface IPublicChapterContent {
 export namespace StoryFunctions {
 
 	export function setStoryTitle(story: IStoryModel, newTitle: string): boolean {
-		if (!newTitle) {
+		if (newTitle === undefined) {
 			return false
 		}
 		// TODO: Validate title
 		story.title = newTitle
+		return true
+	}
+
+	export function setStoryDescription(story: IStoryModel, newDescription: string): boolean {
+		if (newDescription === undefined) {
+			return false
+		}
+		console.log("----- DESC: ")
+		console.log(newDescription)
+		// TODO: Validate description
+		story.description = newDescription
 		return true
 	}
 
@@ -107,15 +120,16 @@ export namespace StoryFunctions {
 		return <IPublicStory>{
 			storyId: storyModel._id,
 			authorId: storyModel.authorId,
-			accessibility: storyModel.accessibility,
-			title: storyModel.title,
-			upvotes: storyModel.upvotes,
-			downvotes: storyModel.downvotes,
-			thumbnailURI: storyModel.thumbnailURI,
-			submittedAt: storyModel.createdAt,
-			lastUpdated: storyModel.modifiedAt,
-			revision: storyModel.revision,
-			chapters: publicChapters
+			title: storyModel.title || "",
+			description: storyModel.description || "",
+			accessibility: storyModel.accessibility || "private",
+			upvotes: storyModel.upvotes || 0,
+			downvotes: storyModel.downvotes || 0,
+			thumbnailURI: storyModel.thumbnailURI || "",
+			submittedAt: storyModel.createdAt || 0,
+			lastUpdated: storyModel.modifiedAt || 0,
+			revision: storyModel.revision || 0,
+			chapters: publicChapters || []
 		}
 	}
 
@@ -123,18 +137,18 @@ export namespace StoryFunctions {
 		return <IPublicStoryChapter>{
 			chapterId: chapterModel._id,
 			storyId: storyId,
-			title: chapterModel.title,
-			URI: chapterModel.URI,
-			revision: chapterModel.revision,
-			createdAt: chapterModel.createdAt,
-			modifiedAt: chapterModel.modifiedAt,
+			title: chapterModel.title || "",
+			URI: chapterModel.URI || "",
+			revision: chapterModel.revision || 0,
+			createdAt: chapterModel.createdAt || 0,
+			modifiedAt: chapterModel.modifiedAt || 0,
 		}
 	}
 
 	export function toPublicContent(contentModel: IChapterContentModel): IPublicChapterContent {
 		return <IPublicChapterContent>{
 			URI: contentModel._id,
-			content: contentModel.content
+			content: contentModel.content || ""
 		}
 	}
 

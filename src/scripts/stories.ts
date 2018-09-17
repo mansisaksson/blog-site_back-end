@@ -54,6 +54,12 @@ module.exports = function (app: Express) {
 				}
 			}
 
+			if (newStoryProperties['description']) {
+				if (!StoryFunctions.setStoryDescription(story, newStoryProperties.description)) {
+					return Protocol.error(res, "INVALID_STORY_DESCRIPTION")
+				}
+			}
+
 			if (newStoryProperties['accessibility']) {
 				if (!StoryFunctions.setStoryAccesibility(story, newStoryProperties.accessibility)) {
 					return Protocol.error(res, "INVALID_STORY_ACCESSIBILITY")
