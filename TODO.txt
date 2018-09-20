@@ -1,3 +1,5 @@
+[ ] Auto-build setup
+
 [x] Check for duplicate user names
 
 [x] Hash passwords
