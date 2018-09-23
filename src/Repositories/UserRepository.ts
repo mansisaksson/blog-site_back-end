@@ -20,7 +20,7 @@ let schema = new mongoose.Schema({
 		type: Number,
 		required: false
 	}
-}).pre('save', function (next) {
+}).pre('save', function (this: any, next: mongoose.HookNextFunction, docs: any[]) {
 	if (this._doc) {
 		let doc = <IUserModel>this._doc
 		let now = Date.now()

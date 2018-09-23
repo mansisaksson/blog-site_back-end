@@ -9,7 +9,7 @@ let chapterSchema = new mongoose.Schema({
 	revision: Number,
 	createdAt: Number,
 	modifiedAt: Number
-}).pre('save', function (next) {
+}).pre('save', function (this: any, next: mongoose.HookNextFunction, docs: any[]) {
 	if (this._doc) {
 		let doc = <IStoryChapterModel>this._doc
 		let now = Date.now()
@@ -42,7 +42,7 @@ let schema = new mongoose.Schema({
 
 	createdAt: Number,
 	modifiedAt: Number
-}).pre('save', function (next) {
+}).pre('save', function (this: any, next: mongoose.HookNextFunction, docs: any[]) {
 	if (this._doc) {
 		let doc = <IStoryModel>this._doc
 
