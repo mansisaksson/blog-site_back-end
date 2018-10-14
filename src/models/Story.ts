@@ -111,6 +111,29 @@ export namespace StoryFunctions {
 		})
 	}
 
+	export function rearrangeChapters(story: IStoryModel, chapterArrangement: string[]): boolean {
+		if (!chapterArrangement) {
+			return false
+		}
+		
+		if (story.chapters.length != chapterArrangement.length) {
+			return false
+		}
+
+		let newChapterArray: IStoryChapterModel[] = []
+		chapterArrangement.forEach(chapterId => {
+			let index = story.chapters.findIndex(chapter => chapterId == chapter._id)
+			if (index == -1) { // Make sure the chapter actually exists
+				return false
+			}
+
+			newChapterArray.push(story.chapters[index])
+		})
+
+		story.chapters = newChapterArray
+		return true
+	}
+
 	export function toPublicStory(storyModel: IStoryModel): IPublicStory {
 		let publicChapters: IPublicStoryChapter[] = []
 		storyModel.chapters.forEach(chapter => {

@@ -66,6 +66,12 @@ module.exports = function (app: Express) {
 				}
 			}
 
+			if (newStoryProperties['chapters']) {
+				if (!StoryFunctions.rearrangeChapters(story, newStoryProperties.chapters)) {
+					return Protocol.error(res, "INVALID_STORY_ARRANGEMENT")
+				}
+			}
+
 			if (newStoryProperties['thumbnail']) {
 				StoryFunctions.setStoryThumbnail(story, newStoryProperties.thumbnail).then(() => {
 					updateStory()
