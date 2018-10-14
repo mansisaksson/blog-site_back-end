@@ -230,7 +230,7 @@ module.exports = function (app: Express) {
 			chapterContentRepo.delete(chapter.URI).then(() => {
 				story.chapters = story.chapters.filter(chapter => { return chapter.id != chapterId })
 				storyRepo.update(story.id, story).then(() => {
-					Protocol.success(res)
+					Protocol.success(res, StoryFunctions.toPublicStory(story))
 				}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
 			}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_DELETE_FAIL"))
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
