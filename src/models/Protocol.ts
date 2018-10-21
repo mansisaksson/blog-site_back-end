@@ -15,7 +15,7 @@ export namespace Protocol {
       body: body
     }
     let jsonResponse = JSON.stringify(response)
-    console.log(jsonResponse)
+    console.log("Request successful")
     expressResponse.send(jsonResponse)
     expressResponse.end()
     console.log("*** End Request")
@@ -28,7 +28,7 @@ export namespace Protocol {
       error_message: errorMessage
     }
     let jsonResponse = JSON.stringify(response)
-    console.log(jsonResponse)
+    console.log("Request failed")
     expressResponse.send(jsonResponse)
     expressResponse.end()
     console.log("*** End Request")
