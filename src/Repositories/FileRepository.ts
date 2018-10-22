@@ -10,7 +10,12 @@ export interface FileData {
 
 export namespace FileRepository {
 	let tmpDir = 'tmp/'
-	let filesDir = 'uploads/'
+	let filesDir = '/home/mans/Documents/Web Server/ss_uploads'
+
+	// Fallback if we're not running in the server environment
+	if (!fs.existsSync(filesDir)) {
+		filesDir = "uploads/"
+	}
 
 	export function saveImage_Base64(base64Data: string, format: string, resizeOptions?: { width: number, height: number }): Promise<string> {
 		return new Promise<any>(function (resolve, reject) {
