@@ -1,4 +1,4 @@
-[ ] Move uploads folder to the Appache root and let appache manage serving of the files.
+[ ] Move uploads folder to the Appache root and let appache manage serving of the files. 
 
 [ ] Auto-build setup
 
