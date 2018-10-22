@@ -68,7 +68,7 @@ export namespace FileRepository {
 	export function deleteFile(fileId: string, options?: { ignoreError: boolean }): Promise<any> {
 		return new Promise<any>(function (resolve, reject) {
 			try {
-				let filePath = 'uploads/' + fileId + '*'
+				let filePath = filesDir + fileId + '.*'
 				glob(filePath, {}, function (er, files) {
 					for (const file of files) {
 						fs.unlinkSync(file)
