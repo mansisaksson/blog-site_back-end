@@ -10,7 +10,7 @@ export interface FileData {
 
 export namespace FileRepository {
 	let tmpDir = 'tmp/'
-	let filesDir = '/home/mans/Documents/Web Server/ss_uploads'
+	let filesDir = '/home/mans/Documents/Web Server/ss_uploads/'
 
 	// Fallback if we're not running in the server environment
 	if (!fs.existsSync(filesDir)) {
@@ -52,7 +52,7 @@ export namespace FileRepository {
 	export function loadFile(fileId: string): Promise<FileData> {
 		return new Promise<FileData>((resolve, reject) => {
 			try {
-				let filePath = 'uploads/' + fileId + '*'
+				let filePath = filesDir + fileId + '.*'
 				glob(filePath, {}, function (er, files: string[]) {
 					if (files.length > 0) {
 						let fileData = <FileData>{
