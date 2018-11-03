@@ -74,9 +74,14 @@ module.exports = function (app: Express) {
 	app.post('/api/users', function (req: Request, res: Response, next: NextFunction) {
 		let userName = req.body['userName']
 		let userPassword = req.body['userPassword']
+		let registrationKey = req.body['registrationKey']
 
-		if (!Protocol.validateParams([userName, userPassword])) {
+		if (!Protocol.validateParams([userName, userPassword, registrationKey])) {
 			return Protocol.error(res, "INVALID_PARAM")
+		}
+
+		if (registrationKey != "FJx38J%snpEUg!US**zY") {
+			return Protocol.error(res, 'REGISTRATION_KEY_INVALID')
 		}
 
 		let user = <IUserModel>{
