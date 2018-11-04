@@ -58,15 +58,16 @@ module.exports = function (app: Express) {
 
 	// Get User
 	app.get('/api/users', function (req: Request, res: Response, next: NextFunction) {
-		let id = req.query.user_id
+		let ids = req.query.user_ids
 
-		if (!Protocol.validateParams([id])) {
+		if (!Protocol.validateParams([ids])) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		userRepo.findById(id).then((user) => {
-			let publicUser = UserFunctions.toPublicUser(user)
-			Protocol.success(res, publicUser)
+		userRepo.findByIds(ids).then((users) => {
+			let publicUsers = []
+			users.forEach(user => publicUsers.push(UserFunctions.toPublicUser(user)))
+			Protocol.success(res, publicUsers)
 		}).catch(error => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 
