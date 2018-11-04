@@ -1,6 +1,7 @@
 import { Request, Response, Express, NextFunction } from 'express'
 import { StoryRepository, ChapterContentRepository } from '../Repositories'
 import { StoryFunctions, Protocol, IStoryModel, IStoryChapterModel, IPublicStoryChapter } from '../models'
+import { isArray } from 'util';
 
 module.exports = function (app: Express) {
 	let storyRepo = new StoryRepository()
@@ -238,10 +239,15 @@ module.exports = function (app: Express) {
 
 	// Get Chapters
 	app.get('/api/stories/chapters', function (req: Request, res: Response, next: NextFunction) {
-		let storyIds: string[] = JSON.parse(req.query.chapterIds)
+		let storyIds = req.query.chapterIds
 
 		if (!Protocol.validateParams([storyIds])) {
 			return Protocol.error(res, "INVALID_PARAM")
+		}
+
+		// Only one id, so not passed as an array
+		if (!isArray(storyIds)) {
+			storyIds = [storyIds]
 		}
 
 		// TODO: Don't return if private
@@ -285,9 +291,13 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
+		// Only one id, so not passed as an array
+		if (!isArray(contentURIs)) {
+			contentURIs = [contentURIs]
+		}
+
 		// TODO: Do not allow access if private
-		let contentURIArray = JSON.parse(contentURIs)
-		chapterContentRepo.findByIds(contentURIArray).then(contents => {
+		chapterContentRepo.findByIds(contentURIs).then(contents => {
 			let result = contents.map(c => StoryFunctions.toPublicContent(c))
 			Protocol.success(res, result)
 		}).catch(e => Protocol.error(res, "STORY_CHAPTER_CONTENT_QUERY_FAIL"))

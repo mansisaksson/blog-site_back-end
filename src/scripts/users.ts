@@ -1,6 +1,7 @@
 import { Request, Response, Express, NextFunction } from 'express'
 import { UserRepository, StoryRepository, ChapterContentRepository } from '../Repositories'
 import { UserFunctions, Protocol, IUserModel, IPublicUser } from '../models';
+import { isArray } from 'util';
 
 module.exports = function (app: Express) {
 	let userRepo = new UserRepository()
@@ -59,9 +60,13 @@ module.exports = function (app: Express) {
 	// Get User
 	app.get('/api/users', function (req: Request, res: Response, next: NextFunction) {
 		let ids = req.query.user_ids
-
 		if (!Protocol.validateParams([ids])) {
 			return Protocol.error(res, "INVALID_PARAM")
+		}
+
+		// Only one id, so not passed as an array
+		if (!isArray(ids)) {
+			ids = [ids]
 		}
 
 		userRepo.findByIds(ids).then((users) => {
