@@ -1,0 +1,6 @@
+/.git
+/node_modules
+build-docker.bat
+run-docker.bat
+TODO.txt
+README.md

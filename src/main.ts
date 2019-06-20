@@ -5,7 +5,7 @@ import * as bodyParser from 'body-parser'
 var app = express()
 var MongoStore = require('connect-mongo')(session)
 
-let uri = 'mongodb://localhost/story_site'
+let uri = 'mongodb://mongodb.mansisaksson.com:27017/story_site'
 mongoose.connect(uri).then((Mongoose) => {
 	console.log("Connected to database!")
 

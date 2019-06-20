@@ -10,7 +10,7 @@ export interface FileData {
 
 export namespace FileRepository {
 	let tmpDir = 'tmp/'
-	let filesDir = '/home/mans/Documents/Web Server/ss_uploads/'
+	let filesDir = '/uploads/'
 
 	// Fallback if we're not running in the server environment
 	if (!fs.existsSync(filesDir)) {

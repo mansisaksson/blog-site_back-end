@@ -1,0 +1,1 @@
+npm run build && docker build %0/../ -t dockerregistry.mansisaksson.com:5000/story-site-backend:latest

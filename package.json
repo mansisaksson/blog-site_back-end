@@ -11,7 +11,7 @@
     "main": "./dist/main.js",
     "types": "./dist/main.d.ts",
     "dependencies": {
-        "bcrypt": "^3.0.1",
+        "bcrypt": "^3.0.2",
         "body-parser": "^1.18.3",
         "connect-mongo": "^2.0.1",
         "express": "^4.16.3",
