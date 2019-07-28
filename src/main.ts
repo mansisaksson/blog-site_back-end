@@ -2,12 +2,23 @@ import * as mongoose from 'mongoose'
 import * as express from "express"
 import * as session from 'express-session'
 import * as bodyParser from 'body-parser'
-var app = express()
-var MongoStore = require('connect-mongo')(session)
 
-let uri = 'mongodb://mongodb.mansisaksson.com:27017/story_site'
-mongoose.connect(uri).then((Mongoose) => {
-	console.log("Connected to database!")
+var app = express()
+var listenServer = undefined
+
+var stopWebServer = () => {
+	if (listenServer) {
+		listenServer.close()
+		listenServer = undefined
+	}
+
+	mongoose.disconnect()
+}
+
+var startWebServer = () => {
+	var MongoStore = require('connect-mongo')(session)
+
+	console.log("Starting Web Server!")
 
 	// Use body parser
 	app.use(bodyParser.json({
@@ -51,35 +62,43 @@ mongoose.connect(uri).then((Mongoose) => {
 	// Listen for story requests
 	require('./scripts/stories')(app)
 
-	app.listen(3000, function () {
+	let server = app.listen(3000, function () {
 		console.log("Server started!")
 	}).on("close", function () {
 		console.log("Server Closed!")
-		mongoose.disconnect()
 	})
-}).catch(e => { throw e })
 
-// TODO:
-// process.stdin.resume();//so the program will not close instantly
+	return server
+}
 
-// function exitHandler(options, exitCode) {
-// 	console.log("******************************************** CLOSE ********************************************")
-// 	mongoose.disconnect().then(() => {
-// 		process.exit()
-// 	}).catch(() => {
-// 		process.exit()
-// 	})
-// }
+let dbURI = 'mongodb://mongodb.mansisaksson.com:27017'
+var db = mongoose.connection
 
-// //do something when app is closing
-// process.on('exit', exitHandler.bind(null, { cleanup: true }));
+db.on('connecting', function () {
+	console.log('connecting to MongoDB...')
+});
+db.on('error', function (error) {
+	console.error('Error in MongoDb connection: ' + error)
+	stopWebServer()
+});
+db.on('connected', function () {
+	console.log('MongoDB connected!')
+	listenServer = startWebServer()
+});
+db.once('open', function () {
+	console.log('MongoDB connection opened!')
+});
+db.on('reconnected', function () {
+	console.log('MongoDB reconnected!')
+});
+db.on('disconnected', function () {
+	console.log('MongoDB disconnected!')
+	stopWebServer()
+})
 
-// //catches ctrl+c event
-// process.on('SIGINT', exitHandler.bind(null, { exit: true }));
-
-// // catches "kill pid" (for example: nodemon restart)
-// process.on('SIGUSR1', exitHandler.bind(null, { exit: true }));
-// process.on('SIGUSR2', exitHandler.bind(null, { exit: true }));
-
-// //catches uncaught exceptions
-// process.on('uncaughtException', exitHandler.bind(null, { exit: true }));
+mongoose.connect(dbURI, {
+	user: "admin",
+	pass: "1W4Ta2tKQ02K",
+	dbName: "story_site",
+	server: { auto_reconnect: true }
+}).catch(e => { console.error(e) })
