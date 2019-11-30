@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
-import { FileRepository } from '../Repositories';
+import { FileRepository, CDN } from '../Repositories'
+import { IFileModel } from '../models'
 
 // *** Begin Story Chapter Model
 export interface IStoryChapterModel extends mongoose.Document {
@@ -31,6 +32,7 @@ export interface IStoryModel extends mongoose.Document {
 	upvotes: number
 	downvotes: number
 	thumbnailURI: string
+	bannerURI: string
 	createdAt: number
 	modifiedAt: number
 	revision: number
@@ -46,6 +48,7 @@ export interface IPublicStory {
 	upvotes: number
 	downvotes: number
 	thumbnailURI: string
+	bannerURI: string
 	submittedAt: number
 	lastUpdated: number
 	revision: number
@@ -67,6 +70,7 @@ export interface IPublicChapterContent {
 
 
 export namespace StoryFunctions {
+	let fileRepository = new FileRepository()
 
 	export function setStoryTitle(story: IStoryModel, newTitle: string): boolean {
 		if (newTitle === undefined) {
@@ -100,11 +104,46 @@ export namespace StoryFunctions {
 		return true
 	}
 
-	export function setStoryThumbnail(story: IStoryModel, newThumbnailData: string): Promise<any> {
-		return new Promise<any>(function (resolve, reject) {
-			FileRepository.saveImage_Base64(newThumbnailData, 'png', { width: 256, height: 151 }).then((fileId) => {
-				FileRepository.deleteFile(story.thumbnailURI, { ignoreError: true }).then(() => {
-					story.thumbnailURI = fileId
+	export function setThumbnailContent(story: IStoryModel, newThumbnailContent: string): Promise<boolean> {
+		return new Promise<boolean>((resolve, reject) => {
+			function getThumbnailFile(): Promise<IFileModel> {
+				return new Promise<IFileModel>((resolve, reject) => {
+					fileRepository.findById(story.thumbnailURI).then(file => {
+						resolve(file)
+					}).catch(e => {
+						fileRepository.createNewFile("thumbnail", "png", story.authorId, {}).then(file => {
+							story.thumbnailURI = file._id.toHexString()
+							resolve(file)
+						}).catch(e => reject(e))
+					})
+				})
+			}
+
+			getThumbnailFile().then((file) => {
+				CDN.saveFile(file._id, newThumbnailContent).then(() => {
+					resolve()
+				}).catch(e => reject(e))
+			}).catch(e => reject(e))
+		})
+	}
+
+	export function setBannerContent(story: IStoryModel, newBannerContent: string): Promise<boolean> {
+		return new Promise<boolean>((resolve, reject) => {
+			function getBannerFile(): Promise<IFileModel> {
+				return new Promise<IFileModel>((resolve, reject) => {
+					fileRepository.findById(story.bannerURI).then(file => {
+						resolve(file)
+					}).catch(e => {
+						fileRepository.createNewFile("banner", "png", story.authorId, {}).then(file => {
+							story.bannerURI = file._id.toHexString()
+							resolve(file)
+						}).catch(e => reject(e))
+					})
+				})
+			}
+
+			getBannerFile().then((file) => {
+				CDN.saveFile(file._id, newBannerContent).then(() => {
 					resolve()
 				}).catch(e => reject(e))
 			}).catch(e => reject(e))
@@ -115,7 +154,7 @@ export namespace StoryFunctions {
 		if (!chapterArrangement) {
 			return false
 		}
-		
+
 		if (story.chapters.length != chapterArrangement.length) {
 			return false
 		}
@@ -149,6 +188,7 @@ export namespace StoryFunctions {
 			upvotes: storyModel.upvotes || 0,
 			downvotes: storyModel.downvotes || 0,
 			thumbnailURI: storyModel.thumbnailURI || "",
+			bannerURI: storyModel.bannerURI || "",
 			submittedAt: storyModel.createdAt || 0,
 			lastUpdated: storyModel.modifiedAt || 0,
 			revision: storyModel.revision || 0,

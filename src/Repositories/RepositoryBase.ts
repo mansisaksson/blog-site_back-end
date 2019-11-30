@@ -84,6 +84,9 @@ export class RepositoryBase<T extends mongoose.Document> implements IRead<T>, IW
 
 	findById(_id: string): Promise<T> {
 		return new Promise<T>((resolve, reject) => {
+			if (!_id) {
+				return reject()
+			}
 			let callback = (error: any, result: T) => {
 				if (error) { reject(error) }
 				else { resolve(result) }

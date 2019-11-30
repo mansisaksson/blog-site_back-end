@@ -1,11 +1,12 @@
 import { Request, Response, Express, NextFunction } from 'express'
-import { StoryRepository, ChapterContentRepository } from '../Repositories'
-import { StoryFunctions, Protocol, IStoryModel, IStoryChapterModel, IPublicStoryChapter } from '../models'
+import { StoryRepository, ChapterContentRepository, FileRepository, CDN } from '../Repositories'
+import { StoryFunctions, Protocol, IStoryModel, IStoryChapterModel, IPublicStoryChapter, IFileModel } from '../models'
 import { isArray } from 'util';
 
 module.exports = function (app: Express) {
 	let storyRepo = new StoryRepository()
 	let chapterContentRepo = new ChapterContentRepository()
+	let fileRepository = new FileRepository()
 
 	// Create Story
 	app.post('/api/stories', function (req: Request, res: Response, next: NextFunction) {
@@ -38,15 +39,9 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		storyRepo.findById(storyId).then((story: IStoryModel) => {
+		storyRepo.findById(storyId).then(async (story: IStoryModel) => {
 			if (!Protocol.validateUserSession(req, story.authorId)) {
 				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
-			}
-
-			let updateStory = function () {
-				storyRepo.update(storyId, story).then(() => {
-					Protocol.success(res, StoryFunctions.toPublicStory(story))
-				}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
 			}
 
 			if (newStoryProperties['title']) {
@@ -74,12 +69,27 @@ module.exports = function (app: Express) {
 			}
 
 			if (newStoryProperties['thumbnail']) {
-				StoryFunctions.setStoryThumbnail(story, newStoryProperties.thumbnail).then(() => {
-					updateStory()
-				}).catch(e => Protocol.error(res, "INVALID_STORY_THUMBNAIL"))
-			} else {
-				updateStory()
+				try	{ 
+					await StoryFunctions.setThumbnailContent(story, newStoryProperties['thumbnail'])
+				}
+				catch (e) {
+					return Protocol.error(res, "INVALID_STORY_THUMBNAIL")
+				}
 			}
+
+			if (newStoryProperties['banner']) {
+				try	{ 
+					await StoryFunctions.setBannerContent(story, newStoryProperties['banner'])
+				}
+				catch (e) {
+					return Protocol.error(res, "INVALID_STORY_BANNER")
+				}
+			}
+
+			storyRepo.update(storyId, story).then(() => {
+				Protocol.success(res, StoryFunctions.toPublicStory(story))
+			}).catch(e => Protocol.error(res, "STORY_UPDATE_FAIL"))
+				
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 

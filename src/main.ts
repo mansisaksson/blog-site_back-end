@@ -71,7 +71,8 @@ var startWebServer = () => {
 	return server
 }
 
-let dbURI = 'mongodb://mongodb.mansisaksson.com:27017'
+let dev = true
+let dbURI = dev ? 'mongodb://localhost:27017' : 'mongodb://mongodb.mansisaksson.com:27017'
 var db = mongoose.connection
 
 db.on('connecting', function () {
@@ -96,9 +97,21 @@ db.on('disconnected', function () {
 	stopWebServer()
 })
 
-mongoose.connect(dbURI, {
-	user: "admin",
-	pass: "1W4Ta2tKQ02K",
-	dbName: "story_site",
-	server: { auto_reconnect: true }
-}).catch(e => { console.error(e) })
+if (dev) {
+	mongoose.connect(dbURI, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		dbName: "story_site",
+		autoReconnect: true
+	}).catch(e => { console.error(e) })
+} else {
+	mongoose.connect(dbURI, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		user: "admin",
+		pass: "1W4Ta2tKQ02K",
+		dbName: "story_site",
+		autoReconnect: true
+	}).catch(e => { console.error(e) })
+}
+

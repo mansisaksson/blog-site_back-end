@@ -37,6 +37,7 @@ let schema = new mongoose.Schema({
 	upvotes: Number,
 	downvotes: Number,
 	thumbnailURI: String,
+	bannerURI: String,
 	revision: Number,
 	chapters: [chapterSchema],
 
@@ -60,6 +61,10 @@ let schema = new mongoose.Schema({
 			doc.revision = 0
 		} else {
 			doc.revision += 1
+		}
+
+		if (!doc.bannerURI) {
+			doc.bannerURI = ''
 		}
 	}
 	next()
@@ -94,6 +99,7 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 				upvotes: 0,
 				downvotes: 0,
 				thumbnailURI: "",
+				bannerURI: "",
 				revision: 0,
 				chapters: [chapter]
 			}

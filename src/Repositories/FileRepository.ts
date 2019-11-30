@@ -1,90 +1,64 @@
-import * as fs from 'fs'
-import * as sharp from 'sharp'
-import * as uuidv1 from 'uuid/v1'
-import * as glob from 'glob'
+import * as mongoose from 'mongoose'
+import { RepositoryBase } from './RepositoryBase'
+import { IFileModel } from '../models/File'
 
-export interface FileData {
-	data: Buffer,
-	format: string
-}
+let schema = new mongoose.Schema({
+	fileName: {
+		type: String,
+		required: true
+	},
+	fileType: {
+		type: String,
+		required: true
+	},
+	metaData: {
+		type: Object,
+		required: false
+	},
+	createdAt: {
+		type: Number,
+		required: false
+	},
+	modifiedAt: {
+		type: Number,
+		required: false
+	}
+}).pre('save', function (this: any, next: mongoose.HookNextFunction, docs: any[]) {
+	if (this._doc) {
+		let doc = <IFileModel>this._doc
+		let now = Date.now()
+		if (!doc.createdAt) {
+			doc.createdAt = now
+		}
+		doc.modifiedAt = now
+	}
+	next()
+	return this
+})
 
-export namespace FileRepository {
-	let tmpDir = 'tmp/'
-	let filesDir = '/data/uploads/'
+let FileSchema = mongoose.model<IFileModel>('file', schema, 'files', true)
 
-	// Fallback if we're not running in the server environment
-	if (!fs.existsSync(filesDir)) {
-		filesDir = "uploads/"
+export class FileRepository extends RepositoryBase<IFileModel> {
+
+	constructor() {
+		super(FileSchema)
 	}
 
-	export function saveImage_Base64(base64Data: string, format: string, resizeOptions?: { width: number, height: number }): Promise<string> {
-		return new Promise<any>(function (resolve, reject) {
-			try {
-				if (!fs.existsSync(tmpDir)) {
-					fs.mkdirSync(tmpDir)
-				}
+	createNewFile(fileName: string, fileType: string, ownerId: string, metaData?: object): Promise<IFileModel> {
+		return new Promise<IFileModel>((resolve, reject) => {
+			// TODO: verify ownerId
 
-				if (!fs.existsSync(filesDir)) {
-					fs.mkdirSync(filesDir)
-				}
-
-				let tmpName = 'resize_tmp.' + format
-				fs.writeFileSync(tmpDir + tmpName, Buffer.from(base64Data, 'base64'), { encoding: 'binary' })
-
-				let transform: sharp.SharpInstance = sharp()
-				if (resizeOptions) {
-					transform.toFormat(format)
-					transform.resize(resizeOptions.width, resizeOptions.height)
-				}
-
-				let fileId = uuidv1()
-				let filePath = filesDir + fileId + '.' + format
-				fs.createReadStream(tmpDir + tmpName)
-					.pipe(transform)
-					.pipe(fs.createWriteStream(filePath))
-				resolve(fileId)
-			} catch (error) {
-				reject(error)
+			let file = <IFileModel>{
+				fileName: fileName,
+				fileType: fileType,
+				metaData: metaData,
+				ownerId: ownerId
 			}
+
+			this.create(file).then((file: IFileModel) => {
+				resolve(file)
+			}).catch(e => reject(e))
 		})
 	}
 
-	export function loadFile(fileId: string): Promise<FileData> {
-		return new Promise<FileData>((resolve, reject) => {
-			try {
-				let filePath = filesDir + fileId + '.*'
-				glob(filePath, {}, function (er, files: string[]) {
-					if (files.length > 0) {
-						let fileData = <FileData>{
-							data: fs.readFileSync(files[0]),
-							format: files[0].substr(files[0].lastIndexOf('.'))
-						}
-						resolve(fileData)
-					} else {
-						reject(er)
-					}
-				})
-			} catch (error) {
-				reject()
-			}
-		})
-	}
-
-	export function deleteFile(fileId: string, options?: { ignoreError: boolean }): Promise<any> {
-		return new Promise<any>(function (resolve, reject) {
-			try {
-				let filePath = filesDir + fileId + '.*'
-				glob(filePath, {}, function (er, files) {
-					for (const file of files) {
-						fs.unlinkSync(file)
-						console.log("Remove: ")
-						console.log(file)
-					}
-					resolve()
-				})
-			} catch (error) {
-				reject(error)
-			}
-		})
-	}
 }
