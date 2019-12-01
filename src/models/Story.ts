@@ -134,7 +134,7 @@ export namespace StoryFunctions {
 					fileRepository.findById(story.bannerURI).then(file => {
 						resolve(file)
 					}).catch(e => {
-						fileRepository.createNewFile("banner", "png", story.authorId, {}).then(file => {
+						fileRepository.createNewFile("blog_banner", "png", story.authorId, {}).then(file => {
 							story.bannerURI = file._id.toHexString()
 							resolve(file)
 						}).catch(e => reject(e))

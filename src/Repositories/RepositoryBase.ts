@@ -91,7 +91,7 @@ export class RepositoryBase<T extends mongoose.Document> implements IRead<T>, IW
 				if (error) { reject(error) }
 				else { resolve(result) }
 			}
-			this._model.findById(_id, callback);
+			this._model.findById(this.toObjectId(_id), callback);
 		})
 	}
 

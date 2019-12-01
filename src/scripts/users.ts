@@ -2,6 +2,7 @@ import { Request, Response, Express, NextFunction } from 'express'
 import { UserRepository, StoryRepository, ChapterContentRepository } from '../Repositories'
 import { UserFunctions, Protocol, IUserModel, IPublicUser } from '../models';
 import { isArray } from 'util';
+import e = require('express');
 
 module.exports = function (app: Express) {
 	let userRepo = new UserRepository()
@@ -95,7 +96,7 @@ module.exports = function (app: Express) {
 			password: ''
 		}
 
-		UserFunctions.setName(user, userName).then(() => {
+		UserFunctions.setUserName(user, userName).then(() => {
 			UserFunctions.setPassword(user, userPassword).then((hashedPw) => {
 				userRepo.createNewUser(user.username, user.password).then((newUser) => {
 					let publicUser = UserFunctions.toPublicUser(newUser)
@@ -113,33 +114,62 @@ module.exports = function (app: Express) {
 		if (!Protocol.validateParams([userId])) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
+
+		if (!Protocol.validateUserSession(req, userId)) {
+			return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+		}
 		
-		userRepo.findById(userId).then((user: IUserModel) => {
-			let onNameUpdated = () => {
-				let onPasswordUpdated = () => {
-					userRepo.update(userId, user).then(() => {
-						Protocol.createUserSession(req, user).then(() => {
-							Protocol.success(res, UserFunctions.toPublicUser(user))
-						}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
-					}).catch(e => Protocol.error(res, "USER_UPDATE_FAIL"))
-				}
-
-				if (newUser['password']) {
-					UserFunctions.setPassword(user, newUser['password']).then(() => {
-						onPasswordUpdated()
-					}).catch(e => Protocol.error(res, "USER_UPDATE_PASSWORD_FAIL"))
-				} else {
-					onPasswordUpdated()
-				}
-			}
-
+		userRepo.findById(userId).then(async (user: IUserModel) => {
 			if (newUser['username']) {
-				UserFunctions.setName(user, newUser['username']).then(() => {
-					onNameUpdated()
-				}).catch(e => Protocol.error(res, e))
-			} else {
-				onNameUpdated()
+				try {
+					await UserFunctions.setUserName(user, newUser['username'])
+				} catch (error) {
+					return Protocol.error(res, "USER_UPDATE_NAME_FAIL")
+				}
 			}
+
+			if (newUser['displayName']) {
+				if (!UserFunctions.setDisplayName(user, newUser['displayName'])) {
+					return Protocol.error(res, "USER_UPDATE_DISPLAY_NAME_FAIL")
+				}
+			}
+
+			if (newUser['profilePicture']) {
+				try {
+					await UserFunctions.setProfilePictureContent(user, newUser['profilePicture'])
+				} catch (e) {
+					return Protocol.error(res, "USER_UPDATE_PROFILE_PICTURE_FAIL")
+				}
+			}
+
+			if (newUser['banner']) {
+				try {
+					await UserFunctions.setBannerContent(user, newUser['banner'])
+				} catch (e) {
+					return Protocol.error(res, "USER_UPDATE_BANNER_FAIL")
+				}
+			}
+			
+			if (newUser['description']) {
+				if (!UserFunctions.setDescription(user, newUser['description'])) {
+					return Protocol.error(res, "USER_UPDATE_DESCRIPTION_FAIL")
+				}
+			}
+
+			if (newUser['password']) {
+				try {
+					await UserFunctions.setPassword(user, newUser['password'])
+				} catch (e) {
+					return Protocol.error(res, "USER_UPDATE_PASSWORD_FAIL")
+				}
+			}
+
+			userRepo.update(userId, user).then(() => {
+				Protocol.createUserSession(req, user).then(() => {
+					Protocol.success(res, UserFunctions.toPublicUser(user))
+				}).catch(e => Protocol.error(res, "SESSION_CREATE_FAIL"))
+			}).catch(e => Protocol.error(res, "USER_UPDATE_FAIL"))
+
 		}).catch(e => Protocol.error(res, "USER_QUERY_FAIL"))
 	})
 

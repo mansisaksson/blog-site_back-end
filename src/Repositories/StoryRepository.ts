@@ -17,7 +17,7 @@ let chapterSchema = new mongoose.Schema({
 			doc.createdAt = now
 		}
 		doc.modifiedAt = now
-		
+
 		if (!doc.revision) {
 			doc.revision = 0
 		} else {
@@ -56,7 +56,7 @@ let schema = new mongoose.Schema({
 			doc.createdAt = now
 		}
 		doc.modifiedAt = now
-		
+
 		if (!doc.revision) {
 			doc.revision = 0
 		} else {
@@ -69,13 +69,7 @@ let schema = new mongoose.Schema({
 	}
 	next()
 	return this
- })//.post('find', function(doc: IStoryModel, next: mongoose.HookNextFunction) {
-// 	if (!doc.accessibility) {
-// 		doc['accessibility'] = 'private'
-// 	}
-// 	next()
-// 	return this
-// })
+})
 
 let StorySchema = mongoose.model<IStoryModel>('story', schema, 'stories', true)
 
@@ -162,7 +156,7 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 		})
 	}
 
-	updateChapterURI(chapterId: string, URI) : Promise<any> {
+	updateChapterURI(chapterId: string, URI): Promise<any> {
 		return new Promise<any>((resolve, reject) => {
 			this.findByChapterId(chapterId).then(story => {
 				let chapterIndex = story.chapters.findIndex(chapter => { return chapter.id == chapterId })
@@ -176,7 +170,7 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 
 	findChapters(chapterIds: string[]): Promise<IStoryChapterModel[]> {
 		return new Promise<IStoryChapterModel[]>((resolve, reject) => {
-			this.find({ "chapters._id": { $in : chapterIds } }, 1).then(stories => {
+			this.find({ "chapters._id": { $in: chapterIds } }, 1).then(stories => {
 				let chapters = []
 				stories.forEach(story => {
 					story.chapters.forEach(chapter => {
