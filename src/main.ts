@@ -62,6 +62,8 @@ var startWebServer = () => {
 	// Listen for story requests
 	require('./scripts/stories')(app)
 
+	require('./scripts/sitemap')(app)
+
 	let server = app.listen(3000, function () {
 		console.log("Server started!")
 	}).on("close", function () {
@@ -71,7 +73,7 @@ var startWebServer = () => {
 	return server
 }
 
-let dev = true
+let dev = false
 let dbURI = dev ? 'mongodb://localhost:27017' : 'mongodb://mongodb.mansisaksson.com:27017'
 var db = mongoose.connection
 

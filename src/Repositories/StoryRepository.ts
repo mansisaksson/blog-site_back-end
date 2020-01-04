@@ -140,7 +140,7 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 		})
 	}
 
-	searchForStory(query: StoryQuery) {
+	searchForStories(query: StoryQuery) {
 		let authorIdQuery = ".*" + (query.limitToAuthorId ? query.limitToAuthorId : "") + ".*"
 		let titleQuery = ".*" + (query.title ? query.title : "") + ".*"
 

@@ -1,6 +1,10 @@
-[ ] Move uploads folder to the Appache root and let appache manage serving of the files. 
+[x] Setup sitemap
+	[x] return link to all public user blog posts
 
-[ ] Auto-build setup
+========== BACKLOG ==========
+
+
+========== Done ==========
 
 [x] Check for duplicate user names
 

@@ -1,12 +1,11 @@
 import { Request, Response, Express, NextFunction } from 'express'
-import { StoryRepository, ChapterContentRepository, FileRepository, CDN } from '../Repositories'
+import { StoryRepository, ChapterContentRepository, } from '../Repositories'
 import { StoryFunctions, Protocol, IStoryModel, IStoryChapterModel, IPublicStoryChapter, IFileModel } from '../models'
 import { isArray } from 'util';
 
 module.exports = function (app: Express) {
 	let storyRepo = new StoryRepository()
 	let chapterContentRepo = new ChapterContentRepository()
-	let fileRepository = new FileRepository()
 
 	// Create Story
 	app.post('/api/stories', function (req: Request, res: Response, next: NextFunction) {
@@ -142,7 +141,7 @@ module.exports = function (app: Express) {
 			userSessionId = userSession._id
 		}
 
-		storyRepo.searchForStory({ 
+		storyRepo.searchForStories({ 
 			title: query,
 			limitToAuthorId: idQuery,
 			searchingUser: userSessionId
