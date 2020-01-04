@@ -130,6 +130,7 @@ module.exports = function (app: Express) {
 		if (!Protocol.validateParams([authorId])) {
 			idQuery = ""
 		}
+
 		let query = searchQuery
 		if (!Protocol.validateParams([searchQuery])) {
 			query = ""
@@ -141,26 +142,14 @@ module.exports = function (app: Express) {
 			userSessionId = userSession._id
 		}
 
-		idQuery = ".*" + idQuery + ".*"
-		query = ".*" + query + ".*"
-
-		let mgdbQuery = {
-			title: { $regex: query },
-			$and: [{
-				$or: [
-					{ accessibility: 'public' },
-					{ authorId: userSessionId }
-				]
-			}, { authorId: { $regex: idQuery } }
-			]
-		}
-		storyRepo.find(mgdbQuery, 100).then((stories: IStoryModel[]) => {
+		storyRepo.searchForStory({ 
+			title: query,
+			limitToAuthorId: idQuery,
+			searchingUser: userSessionId
+		}).then((stories: IStoryModel[]) => {
 			let result = stories.map(s => StoryFunctions.toPublicStory(s))
 			Protocol.success(res, result)
-		}).catch(e => {
-			console.log(e)
-			Protocol.error(res, "STORY_QUERY_FAIL")
-		})
+		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
 	})
 
 	// Get Story

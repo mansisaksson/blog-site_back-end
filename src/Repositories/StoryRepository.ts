@@ -74,6 +74,14 @@ let schema = new mongoose.Schema({
 
 let StorySchema = mongoose.model<IStoryModel>('story', schema, 'stories', true)
 
+export interface StoryQuery
+{
+	title?: string,
+	searchingUser?: string
+	limitToAuthorId?: string
+	resultLimit?: number
+}
+
 export class StoryRepository extends RepositoryBase<IStoryModel>
 {
 	constructor() {
@@ -130,6 +138,23 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 				}
 			}).catch(e => reject(e))
 		})
+	}
+
+	searchForStory(query: StoryQuery) {
+		let authorIdQuery = ".*" + (query.limitToAuthorId ? query.limitToAuthorId : "") + ".*"
+		let titleQuery = ".*" + (query.title ? query.title : "") + ".*"
+
+		let mgdbQuery = {
+			title: { $regex: titleQuery },
+			$and: [{
+				$or: [
+					{ accessibility: 'public' },
+					{ authorId: query.searchingUser }
+				]
+			}, { authorId: { $regex: authorIdQuery } }
+			]
+		}
+		return this.find(mgdbQuery, query.resultLimit ? query.resultLimit : 100)
 	}
 
 	findByChapterId(chapterId: string): Promise<IStoryModel> {
