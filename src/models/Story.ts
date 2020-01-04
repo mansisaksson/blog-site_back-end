@@ -29,6 +29,7 @@ export interface IStoryModel extends mongoose.Document {
 	title: string
 	description: string
 	accessibility: string
+	tags: string[],
 	upvotes: number
 	downvotes: number
 	thumbnailURI: string
@@ -44,6 +45,7 @@ export interface IPublicStory {
 	authorId: string
 	description: string
 	title: string
+	tags: string[]
 	accessibility: string,
 	upvotes: number
 	downvotes: number
@@ -102,6 +104,14 @@ export namespace StoryFunctions {
 		}
 		story.accessibility = newAccesibility
 		return true
+	}
+
+	export function setTags(story: IStoryModel, newTags: string[]): boolean {
+		if (!(newTags instanceof Array)) {
+			return false;
+		}
+		story.tags = Array.from(new Set(newTags))
+		return true;
 	}
 
 	export function setThumbnailContent(story: IStoryModel, newThumbnailContent: string): Promise<boolean> {
@@ -185,6 +195,7 @@ export namespace StoryFunctions {
 			title: storyModel.title || "",
 			description: storyModel.description || "",
 			accessibility: storyModel.accessibility || "private",
+			tags: storyModel.tags || [],
 			upvotes: storyModel.upvotes || 0,
 			downvotes: storyModel.downvotes || 0,
 			thumbnailURI: storyModel.thumbnailURI || "",

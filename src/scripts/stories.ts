@@ -62,6 +62,12 @@ module.exports = function (app: Express) {
 				}
 			}
 
+			if (newStoryProperties['tags'] != undefined) {
+				if (!StoryFunctions.setTags(story, newStoryProperties.tags)) {
+					return Protocol.error(res, "INVALID_STORY_TAGS")
+				}
+			}
+
 			if (newStoryProperties['chapters']) {
 				if (!StoryFunctions.rearrangeChapters(story, newStoryProperties.chapters)) {
 					return Protocol.error(res, "INVALID_STORY_ARRANGEMENT")

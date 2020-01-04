@@ -33,6 +33,7 @@ let schema = new mongoose.Schema({
 	authorId: String,
 	title: String,
 	description: String,
+	tags: [String],
 	accessibility: String,
 	upvotes: Number,
 	downvotes: Number,
