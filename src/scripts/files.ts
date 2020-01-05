@@ -6,18 +6,22 @@ module.exports = function (app: Express) {
 	let fileRepo = new FileRepository()
 
 	// Get File
-	app.get('/api/file', function (req: Request, res: Response, next: NextFunction) {
+	app.get('/api/file', async function (req: Request, res: Response, next: NextFunction) {
 		let fileId: string = req.params.fileId
-		if (fileId) {
-			fileRepo.findById(fileId).then((file: IFileModel) => {
-				let publicFile = FileFunctions.toPublicFile(file)
-				Protocol.success(res, publicFile)
-			}).catch(e => Protocol.error(res, "FILE_QUERY_FAIL"))
+		if (!fileId) {
+			return Protocol.error(res, "INVALID_FILE_ID")
 		}
+
+		let file = await fileRepo.findById(fileId)
+		if (!file) {
+			return Protocol.error(res, "FILE_QUERY_FAIL")
+		}
+
+		Protocol.success(res, FileFunctions.toPublicFile(file))
 	})
 
 	// Create File
-	app.post('/api/file', function (req: Request, res: Response, next: NextFunction) {
+	app.post('/api/file', async function (req: Request, res: Response, next: NextFunction) {
 		let userId = req.query.userId
 		let fileName = req.body['fileName'] ? req.body['fileName'] : "default_file_name"
 		let fileType = req.body['fileType']
@@ -31,10 +35,12 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
 		}
 
-		fileRepo.createNewFile(fileName, fileType, userId, fileMetaData).then(file => {
-			let publicFile = FileFunctions.toPublicFile(file)
-			Protocol.success(res, publicFile)
-		}).catch(e => Protocol.error(res, "FILE_CREATE_FAIL"))
+		let file = await fileRepo.createNewFile(fileName, fileType, userId, fileMetaData)
+		if (!file) {
+			return Protocol.error(res, "FILE_CREATE_FAIL")
+		}
+
+		Protocol.success(res, FileFunctions.toPublicFile(file))
 	})
 
 	// Update File
@@ -50,7 +56,7 @@ module.exports = function (app: Express) {
 		if (!file) {
 			return Protocol.error(res, "FILE_QUERY_FAIL")
 		}
-		
+
 		if (!Protocol.validateUserSession(req, file.ownerId)) {
 			return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
 		}
@@ -73,48 +79,57 @@ module.exports = function (app: Express) {
 			}
 		}
 
-		if (await fileRepo.update(fileId, file)) {
-			Protocol.success(res, FileFunctions.toPublicFile(file))
-		} else {
+		if (!await fileRepo.update(fileId, file)) {
 			Protocol.error(res, "FILE_UPDATE_FAIL")
 		}
+
+		Protocol.success(res, FileFunctions.toPublicFile(file))
 	})
 
 	// Delete File
-	app.delete('api/file', function (req: Request, res: Response, next: NextFunction) {
+	app.delete('api/file', async function (req: Request, res: Response, next: NextFunction) {
 		let fileId = req.query.fileId
 
 		if (!Protocol.validateParams([fileId])) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		fileRepo.findById(fileId).then(file => {
-			if (!Protocol.validateUserSession(req, file.ownerId)) {
-				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
-			}
+		let file = await fileRepo.findById(fileId)
+		if (!file) {
+			return Protocol.error(res, "FILE_QUERY_FAIL")
+		}
+		if (!Protocol.validateUserSession(req, file.ownerId)) {
+			return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+		}
 
-			fileRepo.delete(fileId).then(() => {
-				CDN.deleteFile(fileId).then(() => {
-					Protocol.success(res)
-				}).catch(e => Protocol.success(res)) // A file can exist without content
-			}).catch(e => Protocol.error(res, "FILE_DELETE_FAIL"))
-		}).catch(e => Protocol.error(res, "FILE_QUERY_FAIL"))
+		if (!await fileRepo.delete(fileId)) {
+			return Protocol.error(res, "FILE_DELETE_FAIL")
+		}
+
+		await CDN.deleteFile(fileId) // Not checking for success, a file can exist without content
+
+		Protocol.success(res)
 	})
 
 	// Get File Content
-	app.get('/api/file/content/:fileId', function (req: Request, res: Response, next: NextFunction) {
+	app.get('/api/file/content/:fileId', async function (req: Request, res: Response, next: NextFunction) {
 		let fileId: string = req.params.fileId
-		if (fileId) {
-			CDN.loadFile(fileId).then((fileData) => {
-				res.setHeader('Content-Type', fileData.format)
-				res.send(fileData.data)
-				res.end()
-			}).catch(e => Protocol.error(res, "FILE_DATA_QUERY_FAIL"))
+		if (!fileId) {
+			return Protocol.error(res, "INVALID_FILE_ID")
 		}
+
+		let fileData = await CDN.loadFile(fileId)
+		if (!fileData) {
+			return Protocol.error(res, "FILE_DATA_QUERY_FAIL")
+		}
+
+		res.setHeader('Content-Type', fileData.format)
+		res.send(fileData.data)
+		res.end()
 	})
 
 	// Update File Content
-	app.put('/api/file/content', function (req: Request, res: Response, next: NextFunction) {
+	app.put('/api/file/content', async function (req: Request, res: Response, next: NextFunction) {
 		let fileId = req.query.fileId
 		let newFileContent: any = req.body
 
@@ -122,14 +137,19 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		fileRepo.findById(fileId).then(file => {
-			if (!Protocol.validateUserSession(req, file.ownerId)) {
-				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
-			}
+		let file = await fileRepo.findById(fileId)
+		if (!file) {
+			return Protocol.error(res, "FILE_QUERY_FAIL")
+		}
 
-			CDN.saveFile(fileId, newFileContent).then(() => {
-				Protocol.success(res)
-			}).catch(e => Protocol.error(res, "FILE_DATA_UPDATE_FAIL"))
-		}).catch(e => Protocol.error(res, "FILE_QUERY_FAIL"))
+		if (!Protocol.validateUserSession(req, file.ownerId)) {
+			return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+		}
+
+		if (!await CDN.saveFile(fileId, newFileContent)) {
+			return Protocol.error(res, "FILE_DATA_UPDATE_FAIL")
+		}
+
+		Protocol.success(res)
 	})
 }
