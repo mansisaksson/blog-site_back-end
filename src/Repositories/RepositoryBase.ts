@@ -130,4 +130,13 @@ export class RepositoryBase<T extends mongoose.Document> implements IRead<T>, IW
 	protected toObjectId(_id: string): mongoose.Types.ObjectId {
 		return mongoose.Types.ObjectId.createFromHexString(_id);
 	}
+
+	protected isId(_id: string): boolean {
+		// a mongoose Id is a 24 char hex string
+		let regex = new RegExp('^[0-9a-fA-F]+$')
+		if (_id.length == 24 && regex.test(_id)) {
+			return true
+		}
+		return false
+	}
 }

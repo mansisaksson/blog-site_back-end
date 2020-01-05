@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { FileRepository, CDN } from '../Repositories'
+import { FileRepository, CDN, StoryRepository } from '../Repositories'
 import { IFileModel } from '../models'
 
 // *** Begin Story Chapter Model
@@ -28,6 +28,7 @@ export interface IStoryModel extends mongoose.Document {
 	authorId: string
 	title: string
 	description: string
+	friendlyId: string
 	accessibility: string
 	tags: string[],
 	upvotes: number
@@ -44,6 +45,7 @@ export interface IPublicStory {
 	storyId: string
 	authorId: string
 	description: string
+	friendlyId: string
 	title: string
 	tags: string[]
 	accessibility: string,
@@ -73,6 +75,7 @@ export interface IPublicChapterContent {
 
 export namespace StoryFunctions {
 	let fileRepository = new FileRepository()
+	let storyRepository = new StoryRepository()
 
 	export function setStoryTitle(story: IStoryModel, newTitle: string): boolean {
 		if (newTitle === undefined) {
@@ -87,8 +90,6 @@ export namespace StoryFunctions {
 		if (newDescription === undefined) {
 			return false
 		}
-		console.log("----- DESC: ")
-		console.log(newDescription)
 		// TODO: Validate description
 		story.description = newDescription
 		return true
@@ -104,6 +105,17 @@ export namespace StoryFunctions {
 		}
 		story.accessibility = newAccesibility
 		return true
+	}
+
+	export async function setFriendlyId(story: IStoryModel, newFriendlyId: string): Promise<boolean> {
+		let foundStory = await storyRepository.findByFriendlyId(newFriendlyId)
+		if (foundStory == undefined || foundStory.id == story.id) {
+			story.friendlyId = newFriendlyId
+			return true
+		}
+		else {
+			return false
+		}
 	}
 
 	export function setTags(story: IStoryModel, newTags: string[]): boolean {
@@ -131,7 +143,7 @@ export namespace StoryFunctions {
 
 			getThumbnailFile().then((file) => {
 				CDN.saveFile(file._id, newThumbnailContent).then(() => {
-					resolve()
+					resolve(true)
 				}).catch(e => reject(e))
 			}).catch(e => reject(e))
 		})
@@ -194,6 +206,7 @@ export namespace StoryFunctions {
 			authorId: storyModel.authorId,
 			title: storyModel.title || "",
 			description: storyModel.description || "",
+			friendlyId: storyModel.friendlyId || "",
 			accessibility: storyModel.accessibility || "private",
 			tags: storyModel.tags || [],
 			upvotes: storyModel.upvotes || 0,

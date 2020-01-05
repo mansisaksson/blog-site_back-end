@@ -32,6 +32,10 @@ let chapterSchema = new mongoose.Schema({
 let schema = new mongoose.Schema({
 	authorId: String,
 	title: String,
+	friendlyId: {
+		type: String,
+		unique: true
+	},
 	description: String,
 	tags: [String],
 	accessibility: String,
@@ -86,6 +90,48 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 {
 	constructor() {
 		super(StorySchema)
+	}
+
+	// override RepositoryBase findById
+	findById(id: string): Promise<IStoryModel> {
+		return new Promise<IStoryModel>((resolve, reject) => {
+			let mgdbQuery = this.isId(id) ? {
+				$or: [
+					{ _id: this.toObjectId(id) },
+					{ friendlyId: id }
+				]
+			} : { 
+				friendlyId: id 
+			}
+
+			this.find(mgdbQuery, 1).then(stories => {
+				if (stories != undefined && stories.length > 0) {
+					resolve(stories[0])
+				} else {
+					reject()
+				}
+			}).catch(e => {
+				console.log(e)
+				reject(e)
+			})
+		})
+	}
+
+	findByFriendlyId(friendlyId: string): Promise<IStoryModel> {
+		return new Promise<IStoryModel>((resolve, reject) => {
+			let mgdbQuery = { friendlyId: friendlyId }
+
+			this.find(mgdbQuery, 1).then(stories => {
+				if (stories != undefined && stories.length > 0) {
+					resolve(stories[0])
+				} else {
+					resolve(null)
+				}
+			}).catch(e => {
+				console.log(e)			
+				resolve(null)
+			})
+		})
 	}
 
 	createNewStory(title: string, authorId: string, chapter1Title: string, contentURI): Promise<IStoryModel> {

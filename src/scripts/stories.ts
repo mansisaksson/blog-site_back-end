@@ -73,6 +73,12 @@ module.exports = function (app: Express) {
 				}
 			}
 
+			if (newStoryProperties['friendlyId']) {
+				if (!await StoryFunctions.setFriendlyId(story, newStoryProperties['friendlyId'])) {
+					return Protocol.error(res, "INVALID_STORY_FRIENDLY_ID")
+				}
+			}
+
 			if (newStoryProperties['thumbnail']) {
 				try	{ 
 					await StoryFunctions.setThumbnailContent(story, newStoryProperties['thumbnail'])
@@ -159,13 +165,13 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		let userSession = Protocol.getUserSession(req)
-		let userSessionId = ''
-		if (userSession) {
-			userSessionId = userSession._id
-		}
-
 		// TODO: Don't return if private
+		// let userSession = Protocol.getUserSession(req)
+		// let userSessionId = ''
+		// if (userSession) {
+		// 	userSessionId = userSession._id
+		// }
+
 		storyRepo.findById(storyId).then((story: IStoryModel) => {
 			Protocol.success(res, StoryFunctions.toPublicStory(story))
 		}).catch(e => Protocol.error(res, "STORY_QUERY_FAIL"))
