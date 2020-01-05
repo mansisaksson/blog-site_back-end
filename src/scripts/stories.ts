@@ -91,19 +91,13 @@ module.exports = function (app: Express) {
 		}
 
 		if (newStoryProperties['thumbnail']) {
-			try {
-				await StoryFunctions.setThumbnailContent(story, newStoryProperties['thumbnail'])
-			}
-			catch (e) {
+			if (!await StoryFunctions.setThumbnailContent(story, newStoryProperties['thumbnail'])) {
 				return Protocol.error(res, "INVALID_STORY_THUMBNAIL")
 			}
 		}
 
 		if (newStoryProperties['banner']) {
-			try {
-				await StoryFunctions.setBannerContent(story, newStoryProperties['banner'])
-			}
-			catch (e) {
+			if (await StoryFunctions.setBannerContent(story, newStoryProperties['banner'])) {
 				return Protocol.error(res, "INVALID_STORY_BANNER")
 			}
 		}
@@ -366,7 +360,7 @@ module.exports = function (app: Express) {
 		}
 
 		// TODO: Do not allow access if private
-		
+
 		let contents = await chapterContentRepo.findByIds(contentURIs)
 		if (contents == undefined || contents == null) {
 			return Protocol.error(res, "STORY_CHAPTER_CONTENT_QUERY_FAIL")
