@@ -1,10 +1,13 @@
-[x] Setup sitemap
-	[x] return link to all public user blog posts
+[ ] Compress chapter content before entering the database
 
 ========== BACKLOG ==========
 
 
 ========== Done ==========
+[x] Restructure project so we're not using try-catch for flow control
+
+[x] Setup sitemap
+	[x] return link to all public user blog posts
 
 [x] Check for duplicate user names
 
