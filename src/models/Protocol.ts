@@ -59,22 +59,24 @@ export namespace Protocol {
       expressRequest.session.user = user
       expressRequest.session.save((err) => {
         if (err) {
-          reject(err)
+          console.log(err)
+          resolve(false)
         } else {
-          resolve()
+          resolve(true)
         }
       })
     })
   }
 
-  export function destroyUserSession(expressRequest: Request): Promise<any> {
-    return new Promise<any>((resolve, reject) => {
+  export function destroyUserSession(expressRequest: Request): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
       expressRequest.session.user = undefined;
       expressRequest.session.save((err) => {
         if (err) {
-          reject(err)
+          console.log(err)
+          resolve(false)
         } else {
-          resolve()
+          resolve(true)
         }
       })
     })

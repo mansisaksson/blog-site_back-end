@@ -14,27 +14,19 @@ export class ChapterContentRepository extends RepositoryBase<IChapterContentMode
 		super(ChapterContentSchema)
 	}
 
-	createNewChapterContent(content: string): Promise<IChapterContentModel> {
-		return new Promise<IChapterContentModel>((resolve, reject) => {
-			let chapterContent = <IChapterContentModel>{
-				content: content
-			}
-			this.create(chapterContent).then((content: IChapterContentModel) => {
-				resolve(content)
-			}).catch(e => reject(e))
-		})
+	async createNewChapterContent(content: string): Promise<IChapterContentModel> {
+		let chapterContent = <IChapterContentModel>{
+			content: content
+		}
+		return await this.create(chapterContent)
 	}
 
-	updateContent(uri: string, content: string): Promise<any> {
-		return new Promise<any>((resolve, reject) => {
-			let newContent = <IChapterContentModel>{
-				content: content
-			}
-			let id = this.toObjectId(uri)
-			this.update(id, newContent).then(() => {
-				resolve()
-			}).catch(e => reject(e))
-		})
+	async updateContent(uri: string, content: string): Promise<boolean> {
+		let newContent = <IChapterContentModel>{
+			content: content
+		}
+
+		return await this.update(this.toObjectId(uri), newContent)
 	}
 }
 Object.seal(ChapterContentRepository)

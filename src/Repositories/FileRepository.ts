@@ -44,21 +44,15 @@ export class FileRepository extends RepositoryBase<IFileModel> {
 		super(FileSchema)
 	}
 
-	createNewFile(fileName: string, fileType: string, ownerId: string, metaData?: object): Promise<IFileModel> {
-		return new Promise<IFileModel>((resolve, reject) => {
-			// TODO: verify ownerId
-
-			let file = <IFileModel>{
-				fileName: fileName,
-				fileType: fileType,
-				metaData: metaData,
-				ownerId: ownerId
-			}
-
-			this.create(file).then((file: IFileModel) => {
-				resolve(file)
-			}).catch(e => reject(e))
-		})
+	async createNewFile(fileName: string, fileType: string, ownerId: string, metaData?: object): Promise<IFileModel> {
+		// TODO: verify ownerId
+		let file = <IFileModel>{
+			fileName: fileName,
+			fileType: fileType,
+			metaData: metaData,
+			ownerId: ownerId
+		}
+		return await this.create(file)
 	}
 
 }

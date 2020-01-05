@@ -38,7 +38,7 @@ module.exports = function (app: Express) {
 	})
 
 	// Update File
-	app.put('/api/file', function (req: Request, res: Response, next: NextFunction) {
+	app.put('/api/file', async function (req: Request, res: Response, next: NextFunction) {
 		let fileId = req.query.fileId
 		let newFileProperties: any = req.body
 
@@ -46,34 +46,38 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, "INVALID_PARAM")
 		}
 
-		fileRepo.findById(fileId).then(file => {
-			if (!Protocol.validateUserSession(req, file.ownerId)) {
-				return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+		let file: IFileModel = await fileRepo.findById(fileId);
+		if (!file) {
+			return Protocol.error(res, "FILE_QUERY_FAIL")
+		}
+		
+		if (!Protocol.validateUserSession(req, file.ownerId)) {
+			return Protocol.error(res, "INSUFFICIENT_PERMISSIONS")
+		}
+
+		if (newFileProperties['fileName']) {
+			if (!FileFunctions.setFileName(file, newFileProperties.fileName)) {
+				return Protocol.error(res, "INVALID_FILE_NAME")
 			}
+		}
 
-			if (newFileProperties['fileName']) {
-				if (!FileFunctions.setFileName(file, newFileProperties.fileName)) {
-					return Protocol.error(res, "INVALID_FILE_NAME")
-				}
+		if (newFileProperties['fileType']) {
+			if (!FileFunctions.setFileType(file, newFileProperties.fileType)) {
+				return Protocol.error(res, "INVALID_FILE_TYPE")
 			}
+		}
 
-			if (newFileProperties['fileType']) {
-				if (!FileFunctions.setFileType(file, newFileProperties.fileType)) {
-					return Protocol.error(res, "INVALID_FILE_TYPE")
-				}
+		if (newFileProperties['metaData']) {
+			if (!FileFunctions.setFileMetaData(file, newFileProperties.metaData)) {
+				return Protocol.error(res, "INVALID_FILE_META_DATA")
 			}
+		}
 
-			if (newFileProperties['metaData']) {
-				if (!FileFunctions.setFileMetaData(file, newFileProperties.metaData)) {
-					return Protocol.error(res, "INVALID_FILE_META_DATA")
-				}
-			}
-
-			fileRepo.update(fileId, file).then(() => {
-				Protocol.success(res, FileFunctions.toPublicFile(file))
-			}).catch(e => Protocol.error(res, "FILE_UPDATE_FAIL"))
-
-		}).catch(e => Protocol.error(res, "FILE_QUERY_FAIL"))
+		if (await fileRepo.update(fileId, file)) {
+			Protocol.success(res, FileFunctions.toPublicFile(file))
+		} else {
+			Protocol.error(res, "FILE_UPDATE_FAIL")
+		}
 	})
 
 	// Delete File

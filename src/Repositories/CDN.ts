@@ -14,59 +14,57 @@ export namespace CDN {
 		filesDir = "uploads/"
 	}
 
-	export function saveFile(fileId: string, base64Data: string, options?: { compressed: true }): Promise<FileData> {
-		return new Promise<any>(async function (resolve, reject) {
-			try { await deleteFile(fileId) } catch (e) {}
+	export async function saveFile(fileId: string, base64Data: string, options?: { compressed: true }): Promise<boolean> {
+		await deleteFile(fileId)
 
-			try {
-				if (!fs.existsSync(filesDir)) {
-					fs.mkdirSync(filesDir)
+		if (!fs.existsSync(filesDir)) {
+			fs.mkdirSync(filesDir)
+		}
+
+		try {
+			fs.writeFileSync(filesDir + fileId, Buffer.from(base64Data, 'base64'), { encoding: 'binary' })
+		} catch (error) {
+			console.log(error)
+			return false			
+		}
+
+		return true
+	}
+
+	export async function loadFile(fileId: string, options?: { compressed: true }): Promise<FileData> {
+		try {
+			let filePath = filesDir + fileId
+			glob(filePath, {}, function (er, files: string[]) {
+				if (files.length > 0) {
+					let fileData = <FileData>{
+						data: fs.readFileSync(files[0]),
+						format: files[0].substr(files[0].lastIndexOf('.'))
+					}
+					return fileData
+				} else {
+					return null
 				}
-
-				fs.writeFileSync(filesDir + fileId, Buffer.from(base64Data, 'base64'), { encoding: 'binary' })
-				resolve(fileId)
-			} catch (error) {
-				reject(error)
-			}
-		})
+			})
+		} catch (error) {
+			console.log(error)
+			return null
+		}
 	}
 
-	export function loadFile(fileId: string, options?: { compressed: true }): Promise<FileData> {
-		return new Promise<FileData>((resolve, reject) => {
-			try {
-				let filePath = filesDir + fileId
-				glob(filePath, {}, function (er, files: string[]) {
-					if (files.length > 0) {
-						let fileData = <FileData>{
-							data: fs.readFileSync(files[0]),
-							format: files[0].substr(files[0].lastIndexOf('.'))
-						}
-						resolve(fileData)
-					} else {
-						reject(er)
-					}
-				})
-			} catch (error) {
-				reject()
-			}
-		})
-	}
-
-	export function deleteFile(fileId: string, options?: { ignoreError: boolean }): Promise<any> {
-		return new Promise<any>(function (resolve, reject) {
-			try {
-				let filePath = filesDir + fileId + '.*'
-				glob(filePath, {}, function (er, files) {
-					for (const file of files) {
-						fs.unlinkSync(file)
-						console.log("Remove: ")
-						console.log(file)
-					}
-					resolve()
-				})
-			} catch (error) {
-				reject(error)
-			}
-		})
+	export async function deleteFile(fileId: string, options?: { ignoreError: boolean }): Promise<boolean> {
+		try {
+			let filePath = filesDir + fileId + '.*'
+			glob(filePath, {}, function (er, files) {
+				for (const file of files) {
+					fs.unlinkSync(file)
+					console.log("Remove: ")
+					console.log(file)
+				}
+				return true
+			})
+		} catch (error) {
+			console.log(error)
+			return false
+		}
 	}
 }

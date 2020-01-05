@@ -58,38 +58,28 @@ export class UserRepository extends RepositoryBase<IUserModel>
 		super(UserSchema)
 	}
 
-	createNewUser(name: string, password: string): Promise<IUserModel> {
-		return new Promise<IUserModel>((resolve, reject) => {
-			let user = <IUserModel>{
-				username: name,
-				password: password
-			}
-
-			this.create(user).then((user: IUserModel) => {
-				resolve(user)
-			}).catch(e => reject(e))
-		})
+	async createNewUser(name: string, password: string): Promise<IUserModel> {
+		let user = <IUserModel>{
+			username: name,
+			password: password
+		}
+		return await this.create(user)
 	}
 
-	findUser(name: string): Promise<IUserModel> {
-		return new Promise<IUserModel>((resolve, reject) => {
-			this.find({ username: name }, 1).then(users => {
-				let result = users.length > 0 ? <IUserModel>users[0] : undefined
-				if (result != undefined) {
-					resolve(result)
-				} else {
-					reject()
-				}
-			}).catch(e => reject(e))
-		})
+	async findUser(name: string): Promise<IUserModel> {
+		let users = await this.find({ username: name }, 1)
+		if (!users || users.length == 0) {
+			return null
+		}
+		return users[0]
 	}
 
-	findUsers(name: string, limit: number): Promise<IUserModel[]> {
-		return new Promise<IUserModel[]>((resolve, reject) => {
-			this.find({ name: name }, limit).then(users => {
-				resolve(users)
-			}).catch(e => reject(e))
-		})
+	async findUsers(name: string, limit: number): Promise<IUserModel[]> {
+		let users = await this.find({ name: name }, limit)
+		if (!users) {
+			return []
+		}
+		return users
 	}
 }
 Object.seal(UserRepository)

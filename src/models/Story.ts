@@ -126,50 +126,49 @@ export namespace StoryFunctions {
 		return true;
 	}
 
-	export function setThumbnailContent(story: IStoryModel, newThumbnailContent: string): Promise<boolean> {
-		return new Promise<boolean>((resolve, reject) => {
-			function getThumbnailFile(): Promise<IFileModel> {
-				return new Promise<IFileModel>((resolve, reject) => {
-					fileRepository.findById(story.thumbnailURI).then(file => {
-						resolve(file)
-					}).catch(e => {
-						fileRepository.createNewFile("thumbnail", "png", story.authorId, {}).then(file => {
-							story.thumbnailURI = file._id.toHexString()
-							resolve(file)
-						}).catch(e => reject(e))
-					})
-				})
+	export async function setThumbnailContent(story: IStoryModel, newThumbnailContent: string): Promise<boolean> {
+
+		async function getThumbnailFile(): Promise<IFileModel> {
+			let file: IFileModel = await fileRepository.findById(story.thumbnailURI)
+			if (file) {
+				return file
 			}
 
-			getThumbnailFile().then((file) => {
-				CDN.saveFile(file._id, newThumbnailContent).then(() => {
-					resolve(true)
-				}).catch(e => reject(e))
-			}).catch(e => reject(e))
-		})
+			file = await fileRepository.createNewFile("thumbnail", "png", story.authorId, {})
+			if (!file) {
+				return null
+			}
+
+			story.thumbnailURI = file._id.toHexString()
+		}
+
+		let file = await getThumbnailFile()
+		if (!file) {
+			return false
+		}
+
+		return await CDN.saveFile(file._id, newThumbnailContent)
 	}
 
-	export function setBannerContent(story: IStoryModel, newBannerContent: string): Promise<boolean> {
-		return new Promise<boolean>((resolve, reject) => {
-			function getBannerFile(): Promise<IFileModel> {
-				return new Promise<IFileModel>((resolve, reject) => {
-					fileRepository.findById(story.bannerURI).then(file => {
-						resolve(file)
-					}).catch(e => {
-						fileRepository.createNewFile("blog_banner", "png", story.authorId, {}).then(file => {
-							story.bannerURI = file._id.toHexString()
-							resolve(file)
-						}).catch(e => reject(e))
-					})
-				})
+	export async function setBannerContent(story: IStoryModel, newBannerContent: string): Promise<boolean> {
+		async function getBannerFile(): Promise<IFileModel> {
+			let file = await fileRepository.findById(story.bannerURI)
+			if (!file) {
+				file = await fileRepository.createNewFile("blog_banner", "png", story.authorId, {})
+				if (!file) {
+					return null
+				}
+				story.bannerURI = file._id.toHexString()
 			}
+			return file
+		}
 
-			getBannerFile().then((file) => {
-				CDN.saveFile(file._id, newBannerContent).then(() => {
-					resolve()
-				}).catch(e => reject(e))
-			}).catch(e => reject(e))
-		})
+		let file = await getBannerFile()
+		if (!file) {
+			return false
+		}
+
+		return await CDN.saveFile(file._id, newBannerContent)
 	}
 
 	export function rearrangeChapters(story: IStoryModel, chapterArrangement: string[]): boolean {

@@ -78,8 +78,7 @@ let schema = new mongoose.Schema({
 
 let StorySchema = mongoose.model<IStoryModel>('story', schema, 'stories', true)
 
-export interface StoryQuery
-{
+export interface StoryQuery {
 	title?: string,
 	searchingUser?: string
 	limitToAuthorId?: string
@@ -93,100 +92,82 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 	}
 
 	// override RepositoryBase findById
-	findById(id: string): Promise<IStoryModel> {
-		return new Promise<IStoryModel>((resolve, reject) => {
-			let mgdbQuery = this.isId(id) ? {
-				$or: [
-					{ _id: this.toObjectId(id) },
-					{ friendlyId: id }
-				]
-			} : { 
-				friendlyId: id 
-			}
+	async findById(id: string): Promise<IStoryModel> {
+		let mgdbQuery = this.isId(id) ? {
+			$or: [
+				{ _id: this.toObjectId(id) },
+				{ friendlyId: id }
+			]
+		} : { friendlyId: id }
 
-			this.find(mgdbQuery, 1).then(stories => {
-				if (stories != undefined && stories.length > 0) {
-					resolve(stories[0])
-				} else {
-					reject()
-				}
-			}).catch(e => {
-				console.log(e)
-				reject(e)
-			})
-		})
+		let stories = await this.find(mgdbQuery, 1)
+		if (stories != undefined && stories != null && stories.length > 0) {
+			return stories[0]
+		}
+
+		return null
 	}
 
-	findByFriendlyId(friendlyId: string): Promise<IStoryModel> {
-		return new Promise<IStoryModel>((resolve, reject) => {
-			let mgdbQuery = { friendlyId: friendlyId }
+	async findByFriendlyId(friendlyId: string): Promise<IStoryModel> {
+		let mgdbQuery = { friendlyId: friendlyId }
 
-			this.find(mgdbQuery, 1).then(stories => {
-				if (stories != undefined && stories.length > 0) {
-					resolve(stories[0])
-				} else {
-					resolve(null)
-				}
-			}).catch(e => {
-				console.log(e)			
-				resolve(null)
-			})
-		})
+		let stories = await this.find(mgdbQuery, 1)
+		if (stories != undefined && stories != null && stories.length > 0) {
+			return stories[0]
+		} else {
+			return null
+		}
 	}
 
-	createNewStory(title: string, authorId: string, chapter1Title: string, contentURI): Promise<IStoryModel> {
-		return new Promise<IStoryModel>((resolve, reject) => {
-			let chapter = <IStoryChapterModel>{
-				title: chapter1Title,
-				URI: contentURI
-			}
+	async createNewStory(title: string, authorId: string, chapter1Title: string, contentURI): Promise<IStoryModel> {
+		let chapter = <IStoryChapterModel>{
+			title: chapter1Title,
+			URI: contentURI
+		}
 
-			let story = <IStoryModel>{
-				authorId: authorId,
-				title: title,
-				accessibility: 'private',
-				upvotes: 0,
-				downvotes: 0,
-				thumbnailURI: "",
-				bannerURI: "",
-				revision: 0,
-				chapters: [chapter]
-			}
+		let story = <IStoryModel>{
+			authorId: authorId,
+			title: title,
+			accessibility: 'private',
+			upvotes: 0,
+			downvotes: 0,
+			thumbnailURI: "",
+			bannerURI: "",
+			revision: 0,
+			chapters: [chapter]
+		}
 
-			this.create(story).then((user: IStoryModel) => {
-				resolve(user)
-			}).catch(e => reject(e))
-		})
+		return await this.create(story)
 	}
 
-	createNewChapter(storyId: string, chapterTitle: string, chapterContentURI: string): Promise<IStoryChapterModel> {
-		return new Promise<IStoryChapterModel>((resolve, reject) => {
-			this.findById(storyId).then(story => {
-				let chapter = <IStoryChapterModel>{
-					title: chapterTitle,
-					URI: chapterContentURI
-				}
-				story.chapters.push(chapter)
-				this.update(story.id, story).then(() => {
-					resolve(story.chapters[story.chapters.length - 1])
-				}).catch(e => reject(e))
-			}).catch(e => reject(e))
-		})
+	async createNewChapter(storyId: string, chapterTitle: string, chapterContentURI: string): Promise<IStoryChapterModel> {
+		let story = await this.findById(storyId)
+		if (!story) {
+			return null
+		}
+
+		let chapter = <IStoryChapterModel>{
+			title: chapterTitle,
+			URI: chapterContentURI
+		}
+		story.chapters.push(chapter)
+
+		if (await this.update(story.id, story)) {
+			return story.chapters[story.chapters.length - 1]
+		}
+
+		return null
 	}
 
-	findByAuthorId(authorId: string): Promise<IStoryModel[]> {
-		return new Promise<IStoryModel[]>((resolve, reject) => {
-			this.find({ authorId: authorId }, 1).then(stories => {
-				if (stories != undefined && stories.length > 0) {
-					resolve(stories)
-				} else {
-					reject()
-				}
-			}).catch(e => reject(e))
-		})
+	async findByAuthorId(authorId: string): Promise<IStoryModel[]> {
+		let stories = await this.find({ authorId: authorId }, 1)
+		if (stories == undefined || stories == null) {
+			return []
+		}
+		return stories
 	}
 
-	searchForStories(query: StoryQuery) {
+	async searchForStories(query: StoryQuery): Promise<IStoryModel[]> {
 		let authorIdQuery = ".*" + (query.limitToAuthorId ? query.limitToAuthorId : "") + ".*"
 		let titleQuery = ".*" + (query.title ? query.title : "") + ".*"
 
@@ -200,59 +181,57 @@ export class StoryRepository extends RepositoryBase<IStoryModel>
 			}, { authorId: { $regex: authorIdQuery } }
 			]
 		}
-		return this.find(mgdbQuery, query.resultLimit ? query.resultLimit : 100)
+		return await this.find(mgdbQuery, query.resultLimit ? query.resultLimit : 100)
 	}
 
-	findByChapterId(chapterId: string): Promise<IStoryModel> {
-		return new Promise<IStoryModel>((resolve, reject) => {
-			this.find({ "chapters._id": chapterId }, 1).then(story => {
-				if (story != undefined && story.length > 0) {
-					resolve(story[0])
-				} else {
-					reject()
+	async findByChapterId(chapterId: string): Promise<IStoryModel> {
+		let stories = await this.find({ "chapters._id": chapterId }, 1)
+		if (stories == undefined || stories == null || stories.length == 0) {
+			return null
+		}
+		return stories[0]
+	}
+
+	async findChapterById(chapterId: string): Promise<IStoryChapterModel> {
+		let story = await this.findByChapterId(chapterId)
+		if (!story) {
+			return null
+		}
+
+		let foundChapter = story.chapters.filter(chapter => { return chapter.id == this.toObjectId(chapterId) })
+		if (!foundChapter || foundChapter.length == 0) {
+			return null
+		}
+
+		return foundChapter[0]
+	}
+
+	async updateChapterURI(chapterId: string, URI): Promise<boolean> {
+		let story = await this.findByChapterId(chapterId)
+		if (!story) {
+			return false
+		}
+
+		let chapterIndex = story.chapters.findIndex(chapter => { return chapter.id == chapterId })
+		story.chapters[chapterIndex].URI = URI
+		if (!await this.update(story.id, story)) {
+			return false
+		}
+		return true
+	}
+
+	async findChapters(chapterIds: string[]): Promise<IStoryChapterModel[]> {
+		let stories = await this.find({ "chapters._id": { $in: chapterIds } }, 1)
+		if (!stories) {
+			return []
+		}
+		let chapters = []
+		stories.forEach(story => {
+			story.chapters.forEach(chapter => {
+				if (chapterIds.find(chapterId => { return chapterId == chapter.id })) {
+					chapters.push(chapter)
 				}
-			}).catch(e => reject(e))
-		})
-	}
-
-	findChapterById(chapterId: string): Promise<IStoryChapterModel> {
-		return new Promise<IStoryChapterModel>((resolve, reject) => {
-			this.findByChapterId(chapterId).then(story => {
-				let foundChapter = story.chapters.filter(chapter => { return chapter.id == this.toObjectId(chapterId) })
-				if (foundChapter != undefined && foundChapter.length > 0) {
-					resolve(foundChapter[0])
-				} else {
-					reject()
-				}
-			}).catch(e => reject(e))
-		})
-	}
-
-	updateChapterURI(chapterId: string, URI): Promise<any> {
-		return new Promise<any>((resolve, reject) => {
-			this.findByChapterId(chapterId).then(story => {
-				let chapterIndex = story.chapters.findIndex(chapter => { return chapter.id == chapterId })
-				story.chapters[chapterIndex].URI = URI
-				this.update(story.id, story).then(() => {
-					resolve()
-				}).catch(e => reject(e))
-			}).catch(e => reject(e))
-		})
-	}
-
-	findChapters(chapterIds: string[]): Promise<IStoryChapterModel[]> {
-		return new Promise<IStoryChapterModel[]>((resolve, reject) => {
-			this.find({ "chapters._id": { $in: chapterIds } }, 1).then(stories => {
-				let chapters = []
-				stories.forEach(story => {
-					story.chapters.forEach(chapter => {
-						if (chapterIds.find(chapterId => { return chapterId == chapter.id })) {
-							chapters.push(chapter)
-						}
-					})
-				})
-				resolve(chapters)
-			}).catch(e => reject(e))
+			})
 		})
 	}
 }
