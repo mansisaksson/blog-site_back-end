@@ -31,24 +31,27 @@ export namespace CDN {
 		return true
 	}
 
-	export async function loadFile(fileId: string, options?: { compressed: true }): Promise<FileData> {
-		try {
-			let filePath = filesDir + fileId
-			glob(filePath, {}, function (er, files: string[]) {
-				if (files.length > 0) {
-					let fileData = <FileData>{
-						data: fs.readFileSync(files[0]),
-						format: files[0].substr(files[0].lastIndexOf('.'))
+	export function loadFile(fileId: string, options?: { compressed: true }): Promise<FileData> {
+		return new Promise<FileData>(resolve => {
+			try {
+				let filePath = filesDir + fileId
+				glob(filePath, {}, function (er, files: string[]) {
+					if (files.length > 0) {
+						let fileData = <FileData>{
+							data: fs.readFileSync(files[0]),
+							format: files[0].substr(files[0].lastIndexOf('.'))
+						}
+						resolve(fileData)
+					} else {
+						resolve(null)
 					}
-					return fileData
-				} else {
-					return null
-				}
-			})
-		} catch (error) {
-			console.log(error)
-			return null
-		}
+				})
+			} catch (error) {
+				console.log(error)
+				resolve(null)
+			}
+		})
+		
 	}
 
 	export async function deleteFile(fileId: string, options?: { ignoreError: boolean }): Promise<boolean> {
