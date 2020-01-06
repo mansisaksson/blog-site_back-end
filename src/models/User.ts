@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose'
 import * as bcrypt from 'bcrypt'
 import { UserRepository, FileRepository, CDN } from '../Repositories';
 import { IFileModel } from '../models'
+import { ImageUtils } from '../utils/ImageUtils';
 
 export interface IUserModel extends mongoose.Document {
 	username: string
@@ -58,6 +59,7 @@ export namespace UserFunctions {
 			if (!file) {
 				file = await fileRepository.createNewFile("profile_picture", "png", userModel._id.toHexString(), {})
 				if (!file) {
+					console.error("Failed to create user profile picture file!")
 					return null
 				}
 				userModel.profilePictureURI = file._id.toHexString()
@@ -69,7 +71,17 @@ export namespace UserFunctions {
 		if (!file) {
 			return false
 		}
-		return await CDN.saveFile(file._id, newPictureContent)
+
+		let { base64Data, err } = await ImageUtils.formatImage_Base64(newPictureContent, 'png', { 
+			width: 256, 
+			height: 256,
+			imageStretchMethod: ImageUtils.ImageStretchMethod.crop
+		})
+		if (err) {
+			return false
+		}
+
+		return await CDN.saveFile(file._id, base64Data)
 	}
 
 	export async function setBannerContent(userModel: IUserModel, newBannerContent: string): Promise<boolean> {
@@ -78,6 +90,7 @@ export namespace UserFunctions {
 			if (!file) {
 				file = await fileRepository.createNewFile("user_banner", "png", userModel._id.toHexString(), {})
 				if (!file) {
+					console.error("Failed to create user banner file!")
 					return null
 				}
 				userModel.bannerURI = file._id.toHexString()
@@ -89,7 +102,18 @@ export namespace UserFunctions {
 		if (!file) {
 			return false
 		}
-		return await CDN.saveFile(file._id, newBannerContent)
+
+		let { base64Data, err } = await ImageUtils.formatImage_Base64(newBannerContent, 'png', { // Convert to png, and set max size to 1920 x 1080
+			width: 1920,
+			height: 1080,
+			preserveAspectRatio: true,
+			withoutEnlargement: true
+		})
+		if (err) {
+			return false
+		}
+
+		return await CDN.saveFile(file._id, base64Data)
 	}
 
 	export function setDescription(userModel: IUserModel, description: string): boolean {
@@ -108,6 +132,7 @@ export namespace UserFunctions {
 
 		try {
 			let hash = bcrypt.hashSync(password, 10)
+			userModel.password = hash
 			return { hashedPassword: hash }
 		} catch (error) {
 			console.log(error)

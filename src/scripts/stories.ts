@@ -97,16 +97,16 @@ module.exports = function (app: Express) {
 		}
 
 		if (newStoryProperties['banner']) {
-			if (await StoryFunctions.setBannerContent(story, newStoryProperties['banner'])) {
+			if (!await StoryFunctions.setBannerContent(story, newStoryProperties['banner'])) {
 				return Protocol.error(res, "INVALID_STORY_BANNER")
 			}
 		}
 
-		if (await storyRepo.update(storyId, story)) {
-			Protocol.success(res, StoryFunctions.toPublicStory(story))
-		} else {
-			Protocol.error(res, "STORY_UPDATE_FAIL")
+		if (!await storyRepo.update(storyId, story)) {
+			return Protocol.error(res, "STORY_UPDATE_FAIL")
 		}
+		
+		Protocol.success(res, StoryFunctions.toPublicStory(story))
 	})
 
 	// Delete Story

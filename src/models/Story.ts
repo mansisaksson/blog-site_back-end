@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose'
 import { FileRepository, CDN, StoryRepository } from '../Repositories'
 import { IFileModel } from '../models'
+import { ImageUtils } from '../utils/ImageUtils'
 
 // *** Begin Story Chapter Model
 export interface IStoryChapterModel extends mongoose.Document {
@@ -110,6 +111,10 @@ export namespace StoryFunctions {
 	export async function setFriendlyId(story: IStoryModel, newFriendlyId: string): Promise<boolean> {
 		let foundStory = await storyRepository.findByFriendlyId(newFriendlyId)
 		if (foundStory == undefined || foundStory.id == story.id) {
+			let regex = new RegExp("[A-Za-z0-9_.\-~]") // Ensure id us url friendly
+			if (!regex.test(newFriendlyId)) {
+				return false
+			}
 			story.friendlyId = newFriendlyId
 			return true
 		}
@@ -130,16 +135,15 @@ export namespace StoryFunctions {
 
 		async function getThumbnailFile(): Promise<IFileModel> {
 			let file: IFileModel = await fileRepository.findById(story.thumbnailURI)
-			if (file) {
-				return file
-			}
-
-			file = await fileRepository.createNewFile("thumbnail", "png", story.authorId, {})
 			if (!file) {
-				return null
+				file = await fileRepository.createNewFile("thumbnail", "png", story.authorId, {})
+				if (!file) {
+					console.error("Failed to create thumbnail file!")
+					return null
+				}
+				story.thumbnailURI = file._id.toHexString()
 			}
-
-			story.thumbnailURI = file._id.toHexString()
+			return file
 		}
 
 		let file = await getThumbnailFile()
@@ -147,7 +151,17 @@ export namespace StoryFunctions {
 			return false
 		}
 
-		return await CDN.saveFile(file._id, newThumbnailContent)
+		let { base64Data, err } = await ImageUtils.formatImage_Base64(newThumbnailContent, 'png', { 
+			width: 256, 
+			height: 151,
+			imageStretchMethod: ImageUtils.ImageStretchMethod.crop
+		})
+		if (err) {
+			console.error(err)
+			return false
+		}
+
+		return await CDN.saveFile(file._id, base64Data)
 	}
 
 	export async function setBannerContent(story: IStoryModel, newBannerContent: string): Promise<boolean> {
@@ -156,6 +170,7 @@ export namespace StoryFunctions {
 			if (!file) {
 				file = await fileRepository.createNewFile("blog_banner", "png", story.authorId, {})
 				if (!file) {
+					console.error("Failed to create blog banner file!")
 					return null
 				}
 				story.bannerURI = file._id.toHexString()
@@ -168,7 +183,17 @@ export namespace StoryFunctions {
 			return false
 		}
 
-		return await CDN.saveFile(file._id, newBannerContent)
+		let { base64Data, err } = await ImageUtils.formatImage_Base64(newBannerContent, 'png', { // Convert to png, and set max size to 1920 x 1080
+			width: 1920,
+			height: 1080,
+			preserveAspectRatio: true,
+			withoutEnlargement: true
+		})
+		if (err) {
+			return false
+		}
+
+		return await CDN.saveFile(file._id, base64Data)
 	}
 
 	export function rearrangeChapters(story: IStoryModel, chapterArrangement: string[]): boolean {

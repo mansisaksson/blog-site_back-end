@@ -109,9 +109,9 @@ module.exports = function (app: Express) {
 			return Protocol.error(res, setNameResult.err)
 		}
 
-		let setPWResult = await UserFunctions.setPassword(user, userPassword)
-		if (setPWResult.err) {
-			return Protocol.error(res, setPWResult.err)
+		let { hashedPassword, err } = await UserFunctions.setPassword(user, userPassword)
+		if (err) {
+			return Protocol.error(res, err)
 		}
 
 		let newUser = await userRepo.createNewUser(user.username, user.password)
