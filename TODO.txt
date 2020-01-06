@@ -1,9 +1,14 @@
-[ ] Compress chapter content before entering the database
+[ ] Rename story to blog post
 
 ========== BACKLOG ==========
 
+[ ] Compress chapter content before entering the database
 
 ========== Done ==========
+[x] Resize thumbnails and banners on upload
+
+[x] Sanatize friendlyURL
+
 [x] Restructure project so we're not using try-catch for flow control
 
 [x] Setup sitemap
