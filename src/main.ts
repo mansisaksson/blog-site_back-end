@@ -40,7 +40,10 @@ import * as bodyParser from 'body-parser'
 			secret: 'rFeshvHyphDvunfzKQubevCWRHBA4r3XXzJFA677EwZfkSTfPUB9D3eAb6cr2VDTcfVDERzHQagchwxYtnZ6n5NnDQP77HRjebMS',
 			resave: false,
 			saveUninitialized: true,
-			cookie: { secure: false },
+			cookie: { 
+				secure: false,
+				sameSite: 'none'
+			},
 			store: new MongoStore({ mongooseConnection: mongoose.connection })
 		}))
 
@@ -83,7 +86,7 @@ import * as bodyParser from 'body-parser'
 		return server
 	}
 
-	let dev = true
+	let dev = false
 	let dbURI = dev ? 'mongodb://localhost:27017' : 'mongodb://mongodb.mansisaksson.com:27017'
 	var db = mongoose.connection
 

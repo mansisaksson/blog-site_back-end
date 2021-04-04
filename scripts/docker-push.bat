@@ -1,0 +1,1 @@
+docker push dockerregistry.mansisaksson.com:5000/story-site-backend

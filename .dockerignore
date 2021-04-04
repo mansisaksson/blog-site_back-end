@@ -1,7 +1,6 @@
 /.git
 /node_modules
 /uploads
-build-docker.bat
-run-docker.bat
+/scripts
 TODO.txt
 README.md
